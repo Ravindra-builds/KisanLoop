@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 120 15% 98%;
+    --foreground: 140 25% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 140 25% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 140 25% 15%;
+
+    --primary: 142 76% 36%;
+    --primary-foreground: 355 100% 97%;
+
+    --secondary: 138 20% 92%;
+    --secondary-foreground: 140 25% 15%;
+
+    --muted: 138 10% 94%;
+    --muted-foreground: 140 10% 45%;
+
+    --accent: 142 60% 92%;
+    --accent-foreground: 142 76% 25%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 140 15% 88%;
+    --input: 140 15% 88%;
+    --ring: 142 76% 36%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 145 30% 6%;
+    --foreground: 140 10% 96%;
+
+    --card: 145 25% 9%;
+    --card-foreground: 140 10% 96%;
+
+    --popover: 145 25% 9%;
+    --popover-foreground: 140 10% 96%;
+
+    --primary: 142 70% 45%;
+    --primary-foreground: 145 30% 6%;
+
+    --secondary: 145 20% 16%;
+    --secondary-foreground: 140 10% 96%;
+
+    --muted: 145 15% 18%;
+    --muted-foreground: 140 10% 65%;
+
+    --accent: 145 30% 18%;
+    --accent-foreground: 140 10% 96%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 145 20% 18%;
+    --input: 145 20% 18%;
+    --ring: 142 70% 45%;
+  }
+
+  /* Farmer-friendly theme: High contrast, larger readability, warm green and soil accents */
+  .theme-farmer {
+    --background: 45 40% 97%;
+    --foreground: 140 40% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 140 40% 10%;
+
+    --primary: 142 80% 30%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 42 65% 90%;
+    --secondary-foreground: 30 50% 20%;
+
+    --muted: 45 20% 92%;
+    --muted-foreground: 140 15% 35%;
+
+    --accent: 38 92% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --border: 140 25% 75%;
+    --input: 140 25% 75%;
+    --ring: 142 80% 30%;
+
+    --radius: 1rem;
+    font-size: 1.05rem;
+  }
+
+  /* Premium theme: Elegant emerald, dark obsidian, gold highlights */
+  .theme-premium {
+    --background: 220 20% 97%;
+    --foreground: 224 71% 4%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 71% 4%;
+
+    --primary: 160 84% 39%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 94%;
+    --secondary-foreground: 220 9% 46%;
+
+    --accent: 43 96% 56%;
+    --accent-foreground: 224 71% 4%;
+
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 160 84% 39%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Leaflet map container height fix */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+}
