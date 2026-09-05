@@ -64,4 +64,103 @@ export class MemoryVectorAdapter implements VectorProvider {
   }
 }
 
-export const vectorProvider: VectorProvider = new MemoryVectorAdapter();
+export class QdrantCloudAdapter implements VectorProvider {
+  private url: string;
+  private apiKey: string;
+  private fallback: MemoryVectorAdapter;
+
+  constructor(url: string, apiKey: string) {
+    this.url = url.replace(/\/$/, "");
+    this.apiKey = apiKey;
+    this.fallback = new MemoryVectorAdapter();
+  }
+
+  private async ensureCollection(collection: string, vectorSize: number = 768) {
+    try {
+      await fetch(`${this.url}/collections/${collection}`, {
+        method: "PUT",
+        headers: {
+          "api-key": this.apiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          vectors: {
+            size: vectorSize,
+            distance: "Cosine",
+          },
+        }),
+      });
+    } catch {
+      // Collection might already exist
+    }
+  }
+
+  async upsertVectors(
+    collection: string,
+    points: { id: string; vector: number[]; payload: Record<string, any> }[]
+  ): Promise<void> {
+    try {
+      if (points.length > 0 && points[0].vector?.length) {
+        await this.ensureCollection(collection, points[0].vector.length);
+      }
+      const res = await fetch(`${this.url}/collections/${collection}/points`, {
+        method: "PUT",
+        headers: {
+          "api-key": this.apiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ points }),
+      });
+      if (!res.ok) throw new Error(`Qdrant upsert returned ${res.status}`);
+    } catch (err) {
+      console.warn("Qdrant upsert failed, using memory vector fallback:", err);
+      await this.fallback.upsertVectors(collection, points);
+    }
+  }
+
+  async searchVectors(
+    collection: string,
+    queryVector: number[],
+    limit: number = 5
+  ): Promise<VectorSearchResult[]> {
+    try {
+      const res = await fetch(`${this.url}/collections/${collection}/points/search`, {
+        method: "POST",
+        headers: {
+          "api-key": this.apiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          vector: queryVector,
+          limit,
+          with_payload: true,
+        }),
+      });
+      if (!res.ok) throw new Error(`Qdrant search returned ${res.status}`);
+      const json = await res.json();
+      const hits = json.result || [];
+      if (hits.length === 0) {
+        return this.fallback.searchVectors(collection, queryVector, limit);
+      }
+      return hits.map((h: any) => ({
+        id: String(h.id),
+        documentId: h.payload?.documentId || "",
+        score: h.score,
+        text: h.payload?.text || "",
+        metadata: h.payload || {},
+      }));
+    } catch (err) {
+      console.warn("Qdrant search failed, falling back to memory vector store:", err);
+      return this.fallback.searchVectors(collection, queryVector, limit);
+    }
+  }
+}
+
+const isExplicitDemo = process.env.DEMO_MODE === "true";
+const qdrantUrl = process.env.QDRANT_URL;
+const qdrantApiKey = process.env.QDRANT_API_KEY;
+
+export const vectorProvider: VectorProvider =
+  !isExplicitDemo && qdrantUrl && qdrantApiKey
+    ? new QdrantCloudAdapter(qdrantUrl, qdrantApiKey)
+    : new MemoryVectorAdapter();

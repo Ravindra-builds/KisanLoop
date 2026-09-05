@@ -74,24 +74,29 @@ KisanLoop strictly separates role territories to prevent cross-contamination:
 
 ---
 
-## ⚙️ 5. Quick Start (Running Locally)
+## ⚙️ 5. Quick Start & Production Commands
 
 ```bash
 # 1. Install dependencies
 pnpm install
 
-# 2. Run local development server
+# 2. Run local development server (starts in DEMO_MODE=true by default)
 pnpm run dev
 
-# 3. Run unit test suite
+# 3. Push Drizzle ORM schema to PostgreSQL + PostGIS (Production)
+pnpm run db:push
+
+# 4. Open Drizzle Studio visual database inspector
+pnpm run db:studio
+
+# 5. Run unit test suite
 pnpm test
 
-# 4. Production build
+# 6. Production build check
 pnpm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) for the Farmer portal.
-Navigate directly to:
-- Expert Review: [http://localhost:3000/expert](http://localhost:3000/expert)
-- Extension Dashboard: [http://localhost:3000/dashboard](http://localhost:3000/dashboard)
-- Knowledge & Datasets: [http://localhost:3000/admin](http://localhost:3000/admin)
+For complete step-by-step instructions on connecting live cloud services (Neon PostgreSQL, PostGIS, Qdrant Cloud, Cloudflare R2, Upstash Redis, Clerk, OpenWeather, and Google Gemini), see [**`setup.md`**](setup.md).
+
+Open [http://localhost:3000](http://localhost:3000) for the Farmer portal.  
+In production mode (`DEMO_MODE=false`), the system prompts for login at [http://localhost:3000/login](http://localhost:3000/login) with pre-configured 1-click test credentials for each portal.

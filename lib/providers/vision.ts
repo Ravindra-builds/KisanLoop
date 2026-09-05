@@ -72,7 +72,10 @@ Output structured diagnosis including disease name, confidence (0.0 - 1.0), seve
   }
 }
 
+const isExplicitDemo = process.env.DEMO_MODE === "true";
+const visionKey = process.env.VISION_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+
 export const visionProvider: VisionProvider =
-  process.env.VISION_PROVIDER === "google" && process.env.GOOGLE_GENERATIVE_AI_API_KEY
-    ? new GeminiVisionAdapter(process.env.GOOGLE_GENERATIVE_AI_API_KEY)
+  !isExplicitDemo && visionKey
+    ? new GeminiVisionAdapter(visionKey)
     : new DemoVisionAdapter();

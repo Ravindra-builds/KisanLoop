@@ -55,7 +55,10 @@ export class OpenWeatherAdapter implements WeatherProvider {
   }
 }
 
+const isExplicitDemo = process.env.DEMO_MODE === "true";
+const weatherKey = process.env.WEATHER_API_KEY;
+
 export const weatherProvider: WeatherProvider =
-  process.env.WEATHER_PROVIDER === "openweather" && process.env.WEATHER_API_KEY
-    ? new OpenWeatherAdapter(process.env.WEATHER_API_KEY)
+  !isExplicitDemo && weatherKey
+    ? new OpenWeatherAdapter(weatherKey)
     : new DemoWeatherAdapter();
