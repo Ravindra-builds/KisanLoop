@@ -35,15 +35,15 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // If not logged in and not already on /login, redirect to /login
-  if (!user && pathname !== "/login") {
+  // If not logged in and not already on /login or /signup, redirect to /login
+  if (!user && pathname !== "/login" && pathname !== "/signup") {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("from", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // If already logged in and visiting /login, redirect to their role home
-  if (user && pathname === "/login") {
+  // If already logged in and visiting /login or /signup, redirect to their role home
+  if (user && (pathname === "/login" || pathname === "/signup")) {
     let target = "/";
     if (user.role === "EXPERT") target = "/expert";
     if (user.role === "GOVT") target = "/dashboard";

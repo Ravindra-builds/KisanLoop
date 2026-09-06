@@ -23,13 +23,19 @@ const config: Config = {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+        charcoal: "#18221B",
+        "primary-dark": "#163624",
+        "primary-container": "#214E34",
+        "secondary-dark": "#4f6351",
+        "accent-warm": "#d97706",
+        "amber-light": "#fef3c7",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "#214E34",
+          foreground: "#ffffff",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "#829783",
+          foreground: "#18221B",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
@@ -77,7 +83,13 @@ const config: Config = {
           900: "#573b30",
         },
       },
+      fontFamily: {
+        sans: ["Inter", "sans-serif"],
+        display: ["Plus Jakarta Sans", "sans-serif"],
+      },
       borderRadius: {
+        "20px": "20px",
+        "2xl": "20px",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",

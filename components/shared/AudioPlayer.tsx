@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Volume2, VolumeX, Play, Square } from "lucide-react";
+import { Volume2, Square, Sparkles } from "lucide-react";
 
 interface AudioPlayerProps {
   textToSpeak: string;
@@ -44,22 +44,28 @@ export function AudioPlayer({ textToSpeak, language = "hi", className = "" }: Au
     <button
       type="button"
       onClick={handleToggleSpeech}
-      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full font-medium transition-all shadow-sm ${
+      className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full font-bold text-xs transition-all cursor-pointer select-none ${
         isPlaying
-          ? "bg-amber-500 text-white animate-pulse"
-          : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-300"
+          ? "bg-amber-500 text-white shadow-md shadow-amber-500/20 ring-2 ring-amber-400/50"
+          : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 border border-emerald-500/25"
       } ${className}`}
       title={isPlaying ? "Stop Voice" : "Listen in Hindi/English"}
     >
       {isPlaying ? (
         <>
-          <Square className="w-4 h-4 fill-current" />
-          <span>रुकें (Stop)</span>
+          {/* Animated sound wave bars */}
+          <div className="flex items-center gap-0.5 h-3">
+            <span className="w-1 bg-white rounded-full animate-[bounce_0.6s_infinite_100ms] h-full" />
+            <span className="w-1 bg-white rounded-full animate-[bounce_0.6s_infinite_200ms] h-2/3" />
+            <span className="w-1 bg-white rounded-full animate-[bounce_0.6s_infinite_300ms] h-full" />
+          </div>
+          <span>रुकें / Stop</span>
+          <Square className="w-3 h-3 fill-current ml-0.5" />
         </>
       ) : (
         <>
-          <Volume2 className="w-4 h-4" />
-          <span>सुनें (Listen)</span>
+          <Volume2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span>सुनें / Listen</span>
         </>
       )}
     </button>

@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { TEST_USERS, getDefaultRedirectForRole } from "@/lib/auth/constants";
 
 type RoleKey = "user" | "expert" | "government" | "admin";
 
 interface RoleMeta {
   key: RoleKey;
+  apiRole: "FARMER" | "EXPERT" | "GOVT" | "ADMIN";
   labelEn: string;
   labelHi: string;
   icon: string;
@@ -16,154 +16,95 @@ interface RoleMeta {
   title: string;
   desc: string;
   features: string[];
-  targetScreen: string;
-  targetPath: string;
-  defaultEmail: string;
-  defaultPass: string;
-  identityLabel: string;
-  identityPlaceholder: string;
-  identityIcon: string;
-  extraLabel: string;
-  extraDefault: string;
-  extraIcon: string;
 }
 
 const ROLES: Record<RoleKey, RoleMeta> = {
   user: {
     key: "user",
+    apiRole: "FARMER",
     labelEn: "User / Farmer",
     labelHi: "किसान",
     icon: "person",
-    badge: "User / Farmer Portal",
+    badge: "Farmer Onboarding",
     title: "Direct Action & Daily Farm Recommendations",
-    desc: "Access simple 5-second daily instructions, Zone B weather risk checks, photo diagnosis, and voice guidance in Hindi or English.",
+    desc: "Join thousands of smallholders receiving actionable, feasibility-checked recommendations calibrated to satellite radar and soil tests.",
     features: [
       "Daily Simple View & 1-Action-a-Day priority",
       "Cadastral 3-Zone soil & moisture mapping",
       "Voice guidance with 1-tap KVK agronomist connect",
     ],
-    targetScreen: "Farmer Simple & Map View (/) ",
-    targetPath: "/",
-    defaultEmail: "ravi.kumar@kisanloop.org",
-    defaultPass: "Farmer@123",
-    identityLabel: "Mobile Number / Email",
-    identityPlaceholder: "+91 98765 43210 or ravi.kumar@kisanloop.org",
-    identityIcon: "smartphone",
-    extraLabel: "Farm Village & Plot ID",
-    extraDefault: "Namkum, Ranchi (Plot 2 - 2.4 ac)",
-    extraIcon: "yard",
   },
   expert: {
     key: "expert",
+    apiRole: "EXPERT",
     labelEn: "Agronomist",
     labelHi: "कृषि वैज्ञानिक",
     icon: "psychology",
-    badge: "Expert Triage Portal",
+    badge: "Expert Verification",
     title: "Differential Diagnosis & Agronomic Escalation",
-    desc: "Review low-confidence AI alerts (<85%), verify leaf blights, inspect RGB/NDVI drone imagery, and dispatch verified formulations to farmers.",
+    desc: "Register your institutional KVK or University credentials to triage field observations and prescribe approved agrochemical protocols.",
     features: [
       "Low-AI-confidence anomaly triage queue",
       "ICAR & State POP approved formulary prescription",
       "Direct audio/SMS broadcast to farmer cluster",
     ],
-    targetScreen: "Expert Triage & Decision Panel (/expert)",
-    targetPath: "/expert",
-    defaultEmail: "dr.patel@kvk-ranchi.org",
-    defaultPass: "Expert@123",
-    identityLabel: "Official Agronomist Email / ID",
-    identityPlaceholder: "dr.patel@kvk-ranchi.org",
-    identityIcon: "mail",
-    extraLabel: "KVK Center & Specialization",
-    extraDefault: "KVK Ranchi - Plant Pathology Unit",
-    extraIcon: "biotech",
   },
   government: {
     key: "government",
+    apiRole: "GOVT",
     labelEn: "Government",
     labelHi: "कृषि विभाग",
     icon: "account_balance",
-    badge: "Government Intelligence Dashboard",
+    badge: "State Agriculture Officer",
     title: "Epidemiological Surveillance & Action Funnel",
-    desc: "Monitor district-wide advisory adoption, tracking completed actions, input barrier analysis (stockouts/cost), and GIS disease outbreak hotspots.",
+    desc: "Access district intelligence dashboards to monitor input stockouts, climate resilience compliance, and pest alert maps.",
     features: [
       "Real-time adoption funnel (Recommended → Verified)",
       "Hyperlocal barrier analytics (38% input stockouts)",
       "District-level cadastral risk zoning & export",
     ],
-    targetScreen: "Govt & Extension Dashboard (/dashboard)",
-    targetPath: "/dashboard",
-    defaultEmail: "dao.ranchi@jharkhand.gov.in",
-    defaultPass: "Govt@123",
-    identityLabel: "Government Officer Email",
-    identityPlaceholder: "dao.ranchi@jharkhand.gov.in",
-    identityIcon: "account_balance",
-    extraLabel: "Department & Jurisdiction",
-    extraDefault: "Dept of Agriculture - Chota Nagpur Division",
-    extraIcon: "location_city",
   },
   admin: {
     key: "admin",
+    apiRole: "ADMIN",
     labelEn: "Admin",
     labelHi: "एडमिन",
     icon: "settings_suggest",
-    badge: "Admin & Knowledge Portal",
+    badge: "System Administration",
     title: "RAG Ingestion, PostGIS Schemas & AI Guardrails",
-    desc: "Manage Qdrant vector embeddings, upload ICAR research papers, lint PostGIS spatial cadastres, and configure autonomous execution confidence thresholds.",
+    desc: "Register administrator credentials to maintain vector embeddings, PostGIS spatial data, and model confidence thresholds.",
     features: [
       "RAG Document Ingestion & Chunking pipeline",
       "Dynamic PostGIS geometry column mapper",
       "Model confidence slider & Demo state reset",
     ],
-    targetScreen: "Admin & Knowledge Portal (/admin)",
-    targetPath: "/admin",
-    defaultEmail: "admin@kisanloop.org",
-    defaultPass: "Admin@123",
-    identityLabel: "System Administrator Username / Email",
-    identityPlaceholder: "admin@kisanloop.org",
-    identityIcon: "admin_panel_settings",
-    extraLabel: "Cluster Node / Security Key",
-    extraDefault: "Ranchi Cluster Primary Node (v2.5)",
-    extraIcon: "hub",
   },
 };
 
-function LoginForm() {
+function SignUpForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const from = searchParams.get("from") || "/";
 
   const [selectedRole, setSelectedRole] = useState<RoleKey>("user");
-  const [email, setEmail] = useState(ROLES.user.defaultEmail);
-  const [password, setPassword] = useState(ROLES.user.defaultPass);
-  const [extraField, setExtraField] = useState(ROLES.user.extraDefault);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [preferredLanguage, setPreferredLanguage] = useState<"hi" | "en">("hi");
   const [lang, setLang] = useState<"en" | "hi">("en");
+
+  // Farmer specifics
+  const [state, setState] = useState("Jharkhand");
+  const [district, setDistrict] = useState("Ranchi");
+  const [village, setVillage] = useState("Namkum");
+  const [plotArea, setPlotArea] = useState("1.2");
+  const [cropName, setCropName] = useState("धान (IR-64)");
+  const [irrigationType, setIrrigationType] = useState("Rainfed");
+  const [soilType, setSoilType] = useState("Loamy");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ message: string; icon: string } | null>(null);
 
   const activeConfig = ROLES[selectedRole];
-
-  const triggerToast = (msg: string, icon = "check_circle") => {
-    setToast({ message: msg, icon });
-    setTimeout(() => setToast(null), 3500);
-  };
-
-  const handleRoleSelect = (key: RoleKey) => {
-    setSelectedRole(key);
-    const cfg = ROLES[key];
-    setEmail(cfg.defaultEmail);
-    setPassword(cfg.defaultPass);
-    setExtraField(cfg.extraDefault);
-    setError(null);
-  };
-
-  const handleQuickFill = () => {
-    setEmail(activeConfig.defaultEmail);
-    setPassword(activeConfig.defaultPass);
-    setExtraField(activeConfig.extraDefault);
-    triggerToast(`Demo credentials applied for ${activeConfig.labelEn}`, "key");
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,25 +112,33 @@ function LoginForm() {
     setError(null);
 
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({
+          name,
+          email,
+          role: activeConfig.apiRole,
+          preferredLanguage,
+          state,
+          district,
+          village,
+          plotArea: parseFloat(plotArea) || 1.0,
+          cropName,
+          irrigationType,
+          soilType,
+        }),
       });
 
       const json = await res.json();
       if (json.success) {
-        triggerToast(`Welcome ${json.data.user?.name || "back"}! Redirecting...`, "check_circle");
-        const dest = from !== "/login" && from !== "/" ? from : activeConfig.targetPath;
-        setTimeout(() => {
-          router.push(dest);
-          router.refresh();
-        }, 300);
+        router.push(json.data.redirectUrl || "/");
+        router.refresh();
       } else {
-        setError(json.error?.message || "Login failed. Please verify your credentials.");
+        setError(json.error?.message || "Registration failed. Please check your information.");
       }
     } catch (err: any) {
-      setError(err.message || "An unexpected network error occurred.");
+      setError(err.message || "An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
@@ -221,7 +170,6 @@ function LoginForm() {
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Language Selector */}
           <div className="flex items-center bg-[#f4f7f5] dark:bg-zinc-800/60 border border-[#e5ece7] dark:border-white/10 rounded-lg p-1 text-xs">
             <button
               type="button"
@@ -248,11 +196,11 @@ function LoginForm() {
           </div>
 
           <Link
-            href="/signup"
+            href="/login"
             className="text-xs font-semibold text-[#1b4332] dark:text-emerald-400 hover:underline flex items-center gap-1"
           >
-            <span>Need an account?</span>
-            <span className="font-bold">Register</span>
+            <span>Have an account?</span>
+            <span className="font-bold">Sign In</span>
             <span className="material-symbols-outlined text-sm">arrow_forward</span>
           </Link>
         </div>
@@ -260,17 +208,17 @@ function LoginForm() {
 
       {/* Main Split Authentication Frame */}
       <main className="flex-1 max-w-[1240px] w-full mx-auto px-4 py-8 md:py-12 flex flex-col justify-center">
-        {/* Role Switcher Segment (4 Distinct Roles) */}
+        {/* Role Switcher */}
         <div className="w-full max-w-2xl mx-auto mb-8">
           <div className="text-center mb-3">
             <span className="text-[11px] font-bold uppercase tracking-widest text-[#608570] dark:text-emerald-400">
-              Select Access Role / भूमिका चुनें
+              Create New Account / नया खाता
             </span>
             <h1 className="text-2xl font-extrabold text-[#111814] dark:text-white tracking-tight mt-0.5">
-              {lang === "hi" ? "किसानलूप में आपका स्वागत है" : "Welcome Back to KisanLoop"}
+              {lang === "hi" ? "किसानलूप में शामिल हों" : "Join the KisanLoop Network"}
             </h1>
             <p className="text-xs text-[#608570] dark:text-zinc-400 mt-1">
-              Choose your portal role to sign in to your dedicated workspace
+              Select your organization role to configure your dedicated workspace
             </p>
           </div>
 
@@ -283,7 +231,7 @@ function LoginForm() {
                 <button
                   key={key}
                   type="button"
-                  onClick={() => handleRoleSelect(key)}
+                  onClick={() => setSelectedRole(key)}
                   className={`flex flex-col sm:flex-row items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs transition-all cursor-pointer border ${
                     isSelected
                       ? "bg-white dark:bg-[#214E34] text-[#1b4332] dark:text-white font-bold shadow-md border-[#d2ded5] dark:border-emerald-600"
@@ -300,7 +248,7 @@ function LoginForm() {
 
         {/* Auth Card Container */}
         <div className="w-full max-w-4xl mx-auto bg-white dark:bg-[#18221B] rounded-3xl border border-[#e2ebe4] dark:border-white/10 shadow-xl overflow-hidden grid grid-cols-1 md:grid-cols-12">
-          {/* Left Column: Contextual Role Showcase & Identity */}
+          {/* Left Column: Contextual Role Showcase */}
           <div className="md:col-span-5 bg-gradient-to-b from-[#f4f8f5] to-[#ebf3ed] dark:from-[#151e18] dark:to-[#121814] p-6 sm:p-8 flex flex-col justify-between border-b md:border-b-0 md:border-r border-[#e2ebe4] dark:border-white/10">
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white dark:bg-white/5 border border-[#d2ded5] dark:border-white/10 shadow-2xs mb-4">
@@ -329,42 +277,27 @@ function LoginForm() {
               </div>
             </div>
 
-            <div className="mt-8 pt-4 border-t border-[#d8e3da] dark:border-white/10 flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="text-[10px] uppercase font-bold text-[#608570] dark:text-zinc-400">Redirects To</span>
-                <span className="text-xs font-bold text-[#111814] dark:text-white">{activeConfig.targetScreen}</span>
-              </div>
-              <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-white/5 border border-[#d2ded5] dark:border-white/10 text-[11px] font-mono text-[#1b4332] dark:text-emerald-400 font-semibold">
-                Port 3000
-              </span>
+            <div className="mt-8 pt-4 border-t border-[#d8e3da] dark:border-white/10 text-xs text-[#608570] dark:text-zinc-400 flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm text-[#1b4332] dark:text-emerald-400">verified_user</span>
+              <span>ICAR Compliant Agronomic Protocol</span>
             </div>
           </div>
 
-          {/* Right Column: Interactive Form */}
-          <div className="md:col-span-7 p-6 sm:p-10 flex flex-col justify-between">
+          {/* Right Column: Registration Form */}
+          <div className="md:col-span-7 p-6 sm:p-10 flex flex-col justify-between max-h-[85vh] overflow-y-auto">
             <div>
-              {/* Header inside form */}
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#edf2ee] dark:border-white/10">
                 <div className="flex items-center gap-1 bg-[#f0f4f1] dark:bg-zinc-800 p-1 rounded-xl border border-[#e0eae2] dark:border-white/10">
-                  <span className="px-4 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-zinc-900 text-[#111814] dark:text-white shadow-xs">
-                    Sign In / प्रवेश
-                  </span>
                   <Link
-                    href="/signup"
+                    href="/login"
                     className="px-4 py-1.5 rounded-lg text-xs font-medium text-[#608570] dark:text-zinc-400 hover:text-[#111814] dark:hover:text-white transition cursor-pointer"
                   >
-                    Create Account
+                    Sign In
                   </Link>
+                  <span className="px-4 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-zinc-900 text-[#111814] dark:text-white shadow-xs">
+                    Create Account
+                  </span>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={handleQuickFill}
-                  className="text-[11px] font-semibold text-[#1b4332] dark:text-emerald-400 hover:bg-[#ebf7eb] dark:hover:bg-white/5 px-2.5 py-1.5 rounded-lg border border-[#d2ded5] dark:border-white/10 transition flex items-center gap-1 cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-sm">key</span>
-                  <span>Quick-Fill Demo</span>
-                </button>
               </div>
 
               {error && (
@@ -374,95 +307,202 @@ function LoginForm() {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Identity Input */}
+                {/* Full Name */}
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-[#111814] dark:text-zinc-200 flex justify-between">
-                    <span>{activeConfig.identityLabel}</span>
-                    <span className="text-[11px] font-normal text-[#608570] dark:text-zinc-400">One-click enabled</span>
+                  <label className="text-xs font-bold text-[#111814] dark:text-zinc-200 block">
+                    Full Name / पूरा नाम
                   </label>
                   <div className="relative">
                     <input
                       type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. Ravi Kumar"
+                      className="w-full text-xs py-2.5 pl-9 pr-3 rounded-xl border border-[#d2ded5] dark:border-white/15 bg-[#fafcfa] dark:bg-zinc-900/60 focus:bg-white dark:focus:bg-zinc-900 focus:border-[#1b4332] focus:ring-0 text-foreground dark:text-white transition-colors"
+                    />
+                    <span className="material-symbols-outlined text-sm text-[#717972] dark:text-zinc-400 absolute left-3 top-3">
+                      badge
+                    </span>
+                  </div>
+                </div>
+
+                {/* Email / Mobile */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-[#111814] dark:text-zinc-200 block">
+                    Email Address / ईमेल
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder={activeConfig.identityPlaceholder}
+                      placeholder="ravi.kumar@kisanloop.org"
                       className="w-full text-xs py-2.5 pl-9 pr-3 rounded-xl border border-[#d2ded5] dark:border-white/15 bg-[#fafcfa] dark:bg-zinc-900/60 focus:bg-white dark:focus:bg-zinc-900 focus:border-[#1b4332] focus:ring-0 text-foreground dark:text-white transition-colors"
                     />
                     <span className="material-symbols-outlined text-sm text-[#717972] dark:text-zinc-400 absolute left-3 top-3">
-                      {activeConfig.identityIcon}
+                      mail
                     </span>
                   </div>
                 </div>
 
-                {/* Role Specific Extra */}
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-[#111814] dark:text-zinc-200 block">
-                    {activeConfig.extraLabel}
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={extraField}
-                      onChange={(e) => setExtraField(e.target.value)}
-                      className="w-full text-xs py-2.5 pl-9 pr-3 rounded-xl border border-[#d2ded5] dark:border-white/15 bg-[#fafcfa] dark:bg-zinc-900/60 focus:bg-white dark:focus:bg-zinc-900 focus:border-[#1b4332] focus:ring-0 text-foreground dark:text-white transition-colors"
-                    />
-                    <span className="material-symbols-outlined text-sm text-[#717972] dark:text-zinc-400 absolute left-3 top-3">
-                      {activeConfig.extraIcon}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Password / Security PIN */}
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-[#111814] dark:text-zinc-200">
-                      Password / Security PIN
+                {/* Password & Language */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-[#111814] dark:text-zinc-200 block">
+                      Password / पासवर्ड
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => triggerToast("OTP sent to registered phone/email", "sms")}
-                      className="text-[11px] text-[#1b4332] dark:text-emerald-400 hover:underline font-semibold"
-                    >
-                      Forgot PIN?
-                    </button>
-                  </div>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full text-xs py-2.5 pl-9 pr-10 rounded-xl border border-[#d2ded5] dark:border-white/15 bg-[#fafcfa] dark:bg-zinc-900/60 focus:bg-white dark:focus:bg-zinc-900 focus:border-[#1b4332] focus:ring-0 text-foreground dark:text-white transition-colors"
-                    />
-                    <span className="material-symbols-outlined text-sm text-[#717972] dark:text-zinc-400 absolute left-3 top-3">
-                      lock
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-2.5 text-[#717972] dark:text-zinc-400 hover:text-[#111814] dark:hover:text-white"
-                    >
-                      <span className="material-symbols-outlined text-sm">
-                        {showPassword ? "visibility_off" : "visibility"}
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="w-full text-xs py-2.5 pl-9 pr-10 rounded-xl border border-[#d2ded5] dark:border-white/15 bg-[#fafcfa] dark:bg-zinc-900/60 focus:bg-white dark:focus:bg-zinc-900 focus:border-[#1b4332] focus:ring-0 text-foreground dark:text-white transition-colors"
+                      />
+                      <span className="material-symbols-outlined text-sm text-[#717972] dark:text-zinc-400 absolute left-3 top-3">
+                        lock
                       </span>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-2.5 text-[#717972] dark:text-zinc-400 hover:text-[#111814] dark:hover:text-white"
+                      >
+                        <span className="material-symbols-outlined text-sm">
+                          {showPassword ? "visibility_off" : "visibility"}
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-[#111814] dark:text-zinc-200 block">
+                      Preferred Language / भाषा
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={preferredLanguage}
+                        onChange={(e) => setPreferredLanguage(e.target.value as "hi" | "en")}
+                        className="w-full text-xs py-2.5 pl-9 pr-3 rounded-xl border border-[#d2ded5] dark:border-white/15 bg-[#fafcfa] dark:bg-zinc-900/60 focus:bg-white dark:focus:bg-zinc-900 focus:border-[#1b4332] focus:ring-0 text-foreground dark:text-white transition-colors"
+                      >
+                        <option value="hi">हिन्दी (Hindi)</option>
+                        <option value="en">English (English)</option>
+                      </select>
+                      <span className="material-symbols-outlined text-sm text-[#717972] dark:text-zinc-400 absolute left-3 top-3">
+                        translate
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Offline Local Node Sync Toggle */}
-                <div className="pt-1 flex items-center justify-between text-xs text-[#526458] dark:text-zinc-400">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" defaultChecked className="rounded border-[#d2ded5] text-[#1b4332] focus:ring-0" />
-                    <span>Keep offline session synced</span>
-                  </label>
-                  <span className="inline-flex items-center gap-1 text-[11px] text-[#1b4332] dark:text-emerald-400 font-semibold">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#1b4332] dark:bg-emerald-400"></span>
-                    Local Edge Node Ready
-                  </span>
-                </div>
+                {/* Farmer Agricultural Farm Configuration */}
+                {selectedRole === "user" && (
+                  <div className="p-4 rounded-2xl bg-[#f4f8f5] dark:bg-[#151e18] border border-[#d2ded5] dark:border-white/10 space-y-3">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-[#1b4332] dark:text-emerald-400">
+                      <span className="material-symbols-outlined text-sm">yard</span>
+                      <span>Cadastral Farm Plot Details / खेत का विवरण</span>
+                    </div>
 
-                {/* Primary Submission Button */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <label className="text-[10px] font-semibold text-[#608570] dark:text-zinc-400 block mb-0.5">
+                          State / राज्य
+                        </label>
+                        <input
+                          type="text"
+                          value={state}
+                          onChange={(e) => setState(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-[#d2ded5] dark:border-white/15 bg-white dark:bg-zinc-900 text-xs text-foreground dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-[#608570] dark:text-zinc-400 block mb-0.5">
+                          District / जिला
+                        </label>
+                        <input
+                          type="text"
+                          value={district}
+                          onChange={(e) => setDistrict(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-[#d2ded5] dark:border-white/15 bg-white dark:bg-zinc-900 text-xs text-foreground dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-[#608570] dark:text-zinc-400 block mb-0.5">
+                          Village / गाँव
+                        </label>
+                        <input
+                          type="text"
+                          value={village}
+                          onChange={(e) => setVillage(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-[#d2ded5] dark:border-white/15 bg-white dark:bg-zinc-900 text-xs text-foreground dark:text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] font-semibold text-[#608570] dark:text-zinc-400 block mb-0.5">
+                          Crop Variety / फसल
+                        </label>
+                        <input
+                          type="text"
+                          value={cropName}
+                          onChange={(e) => setCropName(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-[#d2ded5] dark:border-white/15 bg-white dark:bg-zinc-900 text-xs text-foreground dark:text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-[#608570] dark:text-zinc-400 block mb-0.5">
+                          Plot Area (Acres) / एकड़
+                        </label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={plotArea}
+                          onChange={(e) => setPlotArea(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-[#d2ded5] dark:border-white/15 bg-white dark:bg-zinc-900 text-xs text-foreground dark:text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] font-semibold text-[#608570] dark:text-zinc-400 block mb-0.5">
+                          Irrigation / सिंचाई
+                        </label>
+                        <select
+                          value={irrigationType}
+                          onChange={(e) => setIrrigationType(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-[#d2ded5] dark:border-white/15 bg-white dark:bg-zinc-900 text-xs text-foreground dark:text-white"
+                        >
+                          <option value="Rainfed">Rainfed (वर्षा आधारित)</option>
+                          <option value="Borewell">Borewell (बोरवेल)</option>
+                          <option value="Canal">Canal (नहर)</option>
+                          <option value="Drip">Drip Irrigation (ड्रिप)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-semibold text-[#608570] dark:text-zinc-400 block mb-0.5">
+                          Soil Type / मिट्टी का प्रकार
+                        </label>
+                        <select
+                          value={soilType}
+                          onChange={(e) => setSoilType(e.target.value)}
+                          className="w-full px-2.5 py-1.5 rounded-lg border border-[#d2ded5] dark:border-white/15 bg-white dark:bg-zinc-900 text-xs text-foreground dark:text-white"
+                        >
+                          <option value="Loamy">Loamy (दोमट)</option>
+                          <option value="Clayey">Clayey (चिकनी)</option>
+                          <option value="Sandy">Sandy (बलुई)</option>
+                          <option value="Red Laterite">Red Laterite (लाल लेटेराइट)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Submit button */}
                 <button
                   type="submit"
                   disabled={loading}
@@ -471,49 +511,23 @@ function LoginForm() {
                   {loading ? (
                     <span className="flex items-center gap-2">
                       <span className="material-symbols-outlined animate-spin text-sm">progress_activity</span>
-                      <span>Authenticating securely...</span>
+                      <span>Creating Account & Provisioning Node...</span>
                     </span>
                   ) : (
                     <>
-                      <span>Log In as {activeConfig.labelEn}</span>
+                      <span>Complete Registration &amp; Launch</span>
                       <span className="material-symbols-outlined text-base">arrow_forward</span>
                     </>
                   )}
                 </button>
               </form>
-
-              {/* Fast Access with AgriStack / SMS */}
-              <div className="mt-5 pt-4 border-t border-[#edf2ee] dark:border-white/10 text-center">
-                <span className="text-[11px] text-[#717972] dark:text-zinc-400 uppercase font-semibold">
-                  Or fast access with
-                </span>
-                <div className="grid grid-cols-2 gap-2.5 mt-2.5">
-                  <button
-                    type="button"
-                    onClick={() => triggerToast("Authenticating via AgriStack farmer consent...", "verified_user")}
-                    className="py-2 px-3 rounded-xl border border-[#d2ded5] dark:border-white/10 hover:bg-[#f8faf8] dark:hover:bg-white/5 text-xs font-semibold text-[#111814] dark:text-zinc-200 flex items-center justify-center gap-2 transition cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-sm text-[#1b4332] dark:text-emerald-400">fingerprint</span>
-                    <span>AgriStack / e-KYC</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => triggerToast("OTP code transmitted to your mobile", "dialpad")}
-                    className="py-2 px-3 rounded-xl border border-[#d2ded5] dark:border-white/10 hover:bg-[#f8faf8] dark:hover:bg-white/5 text-xs font-semibold text-[#111814] dark:text-zinc-200 flex items-center justify-center gap-2 transition cursor-pointer"
-                  >
-                    <span className="material-symbols-outlined text-sm text-[#1b4332] dark:text-emerald-400">sms</span>
-                    <span>Direct SMS OTP</span>
-                  </button>
-                </div>
-              </div>
             </div>
 
             <div className="mt-6 text-center text-[11px] text-[#717972] dark:text-zinc-400">
-              By continuing, you agree to KisanLoop’s{" "}
-              <a href="javascript:void(0)" className="underline text-[#1b4332] dark:text-emerald-400">
-                Advisory Protocol
-              </a>{" "}
-              and Data Privacy Standards under ICAR Guidelines.
+              Already have an account?{" "}
+              <Link href="/login" className="font-bold text-[#1b4332] dark:text-emerald-400 hover:underline">
+                Sign In here
+              </Link>
             </div>
           </div>
         </div>
@@ -526,45 +540,37 @@ function LoginForm() {
           <span>• Single Sign-On Portal (User, Agronomist, Government, Admin)</span>
         </div>
         <div className="flex items-center gap-4 mt-2 sm:mt-0 font-medium">
-          <button type="button" onClick={() => handleRoleSelect("user")} className="hover:underline cursor-pointer">
+          <Link href="/login" className="hover:underline">
             Farmer UI
-          </button>
-          <button type="button" onClick={() => handleRoleSelect("expert")} className="hover:underline cursor-pointer">
+          </Link>
+          <Link href="/expert" className="hover:underline">
             Expert Portal
-          </button>
-          <button type="button" onClick={() => handleRoleSelect("government")} className="hover:underline cursor-pointer">
+          </Link>
+          <Link href="/dashboard" className="hover:underline">
             Govt Dashboard
-          </button>
-          <button type="button" onClick={() => handleRoleSelect("admin")} className="hover:underline cursor-pointer">
+          </Link>
+          <Link href="/admin" className="hover:underline">
             Admin Console
-          </button>
+          </Link>
         </div>
       </footer>
-
-      {/* Toast Notification */}
-      {toast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#111814] text-white px-4 py-3 rounded-xl shadow-2xl text-xs flex items-center gap-3 transition-all animate-bounce">
-          <span className="material-symbols-outlined text-emerald-400">{toast.icon}</span>
-          <span>{toast.message}</span>
-        </div>
-      )}
     </div>
   );
 }
 
-export default function LoginPage() {
+export default function SignUpPage() {
   return (
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-[#f8faf8] dark:bg-[#121814]">
           <div className="flex items-center gap-3 text-xs font-semibold text-[#1b4332] animate-pulse">
             <span className="material-symbols-outlined animate-spin text-xl">progress_activity</span>
-            <span>Loading KisanLoop Login...</span>
+            <span>Loading KisanLoop Signup...</span>
           </div>
         </div>
       }
     >
-      <LoginForm />
+      <SignUpForm />
     </Suspense>
   );
 }

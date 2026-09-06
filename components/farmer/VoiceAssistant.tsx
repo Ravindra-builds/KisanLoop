@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Mic, MicOff, Send, Sparkles, BookOpen, Volume2 } from "lucide-react";
+import { Mic, MicOff, Send, Sparkles, BookOpen, Volume2, Waves } from "lucide-react";
 import { useLanguage } from "../shared/LanguageContext";
 import { AudioPlayer } from "../shared/AudioPlayer";
 
@@ -93,40 +93,50 @@ export function VoiceAssistant() {
   };
 
   return (
-    <div className="bg-card rounded-2xl p-6 border border-border shadow-sm space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
-          <Sparkles className="w-5 h-5" />
-          <h3 className="font-bold text-lg text-foreground">
-            {language === "hi"
-              ? "किसान मित्र आवाज सहायक (Voice AI)"
-              : "Voice Agronomic Assistant"}
-          </h3>
+    <div className="bg-card/90 backdrop-blur-xl rounded-3xl p-6 sm:p-8 border border-emerald-500/20 shadow-xl space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-extrabold text-lg sm:text-xl text-foreground tracking-tight">
+              {language === "hi"
+                ? "किसान मित्र आवाज सहायक (Voice AI)"
+                : "Voice Agronomic Assistant"}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {language === "hi"
+                ? "खेत टेलीमेट्री और RAG ज्ञानकोश से सत्यापित"
+                : "Grounded with Live Farm Sensors & ICAR Package of Practices"}
+            </p>
+          </div>
         </div>
-        <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 font-semibold">
-          Grounded with Farm Telemetry & RAG
+
+        <span className="text-[11px] px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 dark:text-emerald-300 font-bold">
+          Gemini 2.5 Flash • Bilingual
         </span>
       </div>
 
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-muted-foreground leading-relaxed">
         {language === "hi"
           ? "अपने खेत की नमी, बारिश, या फसल सुरक्षा से जुड़ा कोई भी सवाल बोलकर पूछें:"
-          : "Ask any question about watering, rainfall, or disease management:"}
+          : "Ask any question about watering, rainfall, fertilizer doses, or pest control:"}
       </p>
 
       {/* Voice & Input Bar */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={handleMicClick}
-          className={`p-3.5 rounded-xl text-white shadow-md transition-all flex items-center justify-center shrink-0 ${
+          className={`w-14 h-14 rounded-2xl text-white shadow-lg transition-all flex items-center justify-center shrink-0 cursor-pointer ${
             isListening
-              ? "bg-red-500 animate-pulse ring-4 ring-red-200"
-              : "bg-emerald-600 hover:bg-emerald-700"
+              ? "bg-rose-600 animate-pulse ring-4 ring-rose-400/40 scale-105"
+              : "bg-emerald-600 hover:bg-emerald-700 active:scale-95 shadow-emerald-600/25"
           }`}
           title={isListening ? "Listening..." : "Tap to speak"}
         >
-          {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+          {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
         </button>
 
         <div className="relative flex-1">
@@ -139,57 +149,79 @@ export function VoiceAssistant() {
               isListening
                 ? language === "hi"
                   ? "सुन रहा हूँ, बोलिए..."
-                  : "Listening..."
+                  : "Listening... speak now"
                 : language === "hi"
-                ? "यहाँ लिखें या माइक दबाएं..."
-                : "Type question or tap mic..."
+                ? "यहाँ लिखें या माइक दबाकर पूछें..."
+                : "Type agronomic question or tap microphone..."
             }
-            className="w-full py-3 pl-4 pr-12 text-sm rounded-xl border border-input bg-background focus:ring-2 focus:ring-emerald-500 outline-none"
+            className="w-full py-3.5 pl-4 pr-12 text-sm rounded-2xl border border-border bg-background focus:ring-2 focus:ring-emerald-500 outline-hidden shadow-xs"
           />
           <button
             type="button"
             onClick={() => handleAsk(query)}
             disabled={isLoading || !query.trim()}
-            className="absolute right-2 top-2 p-2 rounded-lg text-emerald-600 hover:bg-emerald-50 disabled:opacity-40"
+            className="absolute right-2 top-2 p-2 rounded-xl text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 disabled:opacity-30 cursor-pointer transition"
           >
-            <Send className="w-4 h-4" />
+            <Send className="w-5 h-5" />
           </button>
         </div>
       </div>
 
+      {/* Dynamic Sound Wave indicator when listening */}
+      {isListening && (
+        <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/25 flex items-center justify-center gap-2 text-xs font-bold text-rose-600">
+          <div className="flex items-center gap-1 h-4">
+            <span className="w-1 bg-rose-500 rounded-full animate-[bounce_0.6s_infinite_100ms] h-full" />
+            <span className="w-1 bg-rose-500 rounded-full animate-[bounce_0.6s_infinite_200ms] h-2/3" />
+            <span className="w-1 bg-rose-500 rounded-full animate-[bounce_0.6s_infinite_300ms] h-full" />
+            <span className="w-1 bg-rose-500 rounded-full animate-[bounce_0.6s_infinite_150ms] h-4/5" />
+          </div>
+          <span>{language === "hi" ? "आवाज सुनी जा रही है..." : "Listening to audio..."}</span>
+        </div>
+      )}
+
       {/* Quick Questions Pills */}
-      <div className="flex flex-wrap gap-1.5 pt-1">
-        {quickQuestions.map((q, i) => {
-          const text = language === "hi" ? q.hi : q.en;
-          return (
-            <button
-              key={i}
-              type="button"
-              onClick={() => {
-                setQuery(text);
-                handleAsk(text);
-              }}
-              className="text-xs px-3 py-1.5 rounded-full border border-border bg-muted/30 hover:bg-emerald-50 hover:border-emerald-300 text-foreground transition"
-            >
-              💬 {text}
-            </button>
-          );
-        })}
+      <div className="space-y-1.5">
+        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
+          Quick Inquiries (सुझाए गए सवाल)
+        </span>
+        <div className="flex flex-wrap gap-2">
+          {quickQuestions.map((q, i) => {
+            const text = language === "hi" ? q.hi : q.en;
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => {
+                  setQuery(text);
+                  handleAsk(text);
+                }}
+                className="text-xs px-3.5 py-2 rounded-2xl border border-emerald-500/20 bg-background hover:bg-emerald-50/80 dark:hover:bg-emerald-950/40 text-foreground transition cursor-pointer shadow-xs"
+              >
+                💬 {text}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Response Box */}
       {isLoading && (
-        <div className="p-4 rounded-xl bg-muted/40 border text-center text-sm text-muted-foreground animate-pulse">
-          {language === "hi"
-            ? "खेत के सेंसर और ICAR ज्ञानकोश की जांच हो रही है..."
-            : "Checking live farm sensors & ICAR knowledge database..."}
+        <div className="p-6 rounded-3xl bg-muted/40 border text-center text-sm text-muted-foreground animate-pulse flex items-center justify-center gap-2">
+          <Sparkles className="w-5 h-5 text-emerald-500 animate-spin" />
+          <span>
+            {language === "hi"
+              ? "खेत के सेंसर और ICAR ज्ञानकोश से विश्लेषण हो रहा है..."
+              : "Synthesizing real-time farm telemetry & ICAR guidelines..."}
+          </span>
         </div>
       )}
 
       {response && (
-        <div className="p-5 rounded-xl border border-emerald-200 bg-emerald-50/60 dark:bg-emerald-950/30 space-y-3 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wide">
+        <div className="p-6 rounded-3xl border border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-950/40 space-y-4 shadow-sm animate-fade-in">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <span className="text-xs font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
               {language === "hi" ? "सत्यापित परामर्श (Verified Advisory)" : "KisanLoop Verified Advisory"}
             </span>
             <AudioPlayer textToSpeak={response.reply} language={language} />
@@ -200,8 +232,8 @@ export function VoiceAssistant() {
           </p>
 
           {response.sources && response.sources.length > 0 && (
-            <div className="pt-2 border-t border-emerald-200/60 flex items-center gap-1.5 text-xs text-emerald-800/80 dark:text-emerald-300/80">
-              <BookOpen className="w-3.5 h-3.5 shrink-0" />
+            <div className="pt-3 border-t border-emerald-500/20 flex items-center gap-2 text-xs text-emerald-800/80 dark:text-emerald-300/80">
+              <BookOpen className="w-4 h-4 shrink-0" />
               <span>
                 Sources: {response.sources.join(" • ")}
               </span>
