@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import AppIcon from "@/components/shared/AppIcon";
 
 interface DocItem {
   id: string;
@@ -145,16 +146,16 @@ export function AdminPortal() {
   );
 
   return (
-    <div className="bg-[#f1fcf1] dark:bg-[#121814] text-[#141e17] dark:text-zinc-100 min-h-screen font-sans antialiased selection:bg-emerald-100 dark:selection:bg-emerald-950">
-      <div className="max-w-[1380px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="bg-[#f1fcf1] dark:bg-[#121814] text-[#141e17] dark:text-zinc-100 min-h-screen font-sans antialiased selection:bg-emerald-100 dark:selection:bg-emerald-950 w-full overflow-x-hidden">
+      <div className="max-w-[1380px] mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-4 w-full overflow-x-hidden">
         {/* ==================================================================== */}
         {/* TOP SHARED ADMIN NAVIGATION BAR                                      */}
         {/* ==================================================================== */}
-        <header className="flex flex-wrap items-center justify-between border-b border-[#eaf0ed] dark:border-white/10 pb-4 mb-5 gap-4">
-          <div className="flex items-center gap-5 flex-wrap">
+        <header className="flex flex-wrap items-center justify-between border-b border-[#eaf0ed] dark:border-white/10 pb-4 mb-4 gap-4">
+          <div className="flex items-center gap-3 sm:gap-5 flex-wrap">
             <Link href="/" className="flex items-center gap-3 group">
               <div className="w-10 h-10 rounded-xl bg-[#214e34] text-white flex items-center justify-center shadow-xs">
-                <span className="material-symbols-outlined text-[22px]">settings_suggest</span>
+                <AppIcon name="settings_suggest" className="w-5 h-5 text-white" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -170,8 +171,8 @@ export function AdminPortal() {
             </Link>
 
             {/* Global Search Input */}
-            <div className="relative min-w-[240px]">
-              <span className="material-symbols-outlined text-sm text-[#608570] absolute left-3 top-2.5">search</span>
+            <div className="relative w-full sm:w-auto sm:min-w-[200px]">
+              <AppIcon name="search" className="w-4 h-4 text-[#608570] absolute left-3 top-2.5 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
@@ -183,7 +184,7 @@ export function AdminPortal() {
           </div>
 
           {/* Action Bar & Profile */}
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             {/* Top Navigation Links */}
             <div className="hidden xl:flex items-center gap-1 bg-[#eaf0ed] dark:bg-zinc-800 p-1 rounded-xl">
               <button
@@ -248,7 +249,7 @@ export function AdminPortal() {
               className="flex items-center gap-1.5 px-3 py-2 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900/40 rounded-xl text-xs font-bold transition cursor-pointer"
               title="Reset mock and demo state"
             >
-              <span className="material-symbols-outlined text-sm">restart_alt</span>
+              <AppIcon name="restart_alt" className="w-4 h-4" />
               <span className="hidden sm:inline">Reset Demo</span>
             </button>
 
@@ -272,11 +273,59 @@ export function AdminPortal() {
               className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-zinc-800 hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl border border-[#dce6dc] dark:border-white/10 hover:border-red-200 text-xs font-bold shadow-xs transition cursor-pointer"
               title="Log out of Admin Portal"
             >
-              <span className="material-symbols-outlined text-sm">logout</span>
-              <span>Logout</span>
+              <AppIcon name="logout" className="w-4 h-4" />
+              <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </header>
+
+        {/* Mobile Navigation Tabs for Small & Medium Screens */}
+        <div className="xl:hidden flex items-center gap-1.5 overflow-x-auto pb-2.5 mb-4 scrollbar-none">
+          <button
+            type="button"
+            onClick={() => setActiveTab("rag")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeTab === "rag"
+                ? "bg-[#214e34] text-white shadow-xs"
+                : "bg-white dark:bg-zinc-800 text-[#608570] dark:text-zinc-300 border border-[#dce6dc] dark:border-white/10"
+            }`}
+          >
+            Knowledge RAG
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("datasets")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeTab === "datasets"
+                ? "bg-[#214e34] text-white shadow-xs"
+                : "bg-white dark:bg-zinc-800 text-[#608570] dark:text-zinc-300 border border-[#dce6dc] dark:border-white/10"
+            }`}
+          >
+            Datasets &amp; PostGIS
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("guardrails")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeTab === "guardrails"
+                ? "bg-[#214e34] text-white shadow-xs"
+                : "bg-white dark:bg-zinc-800 text-[#608570] dark:text-zinc-300 border border-[#dce6dc] dark:border-white/10"
+            }`}
+          >
+            Model Guardrails
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("simulator")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeTab === "simulator"
+                ? "bg-[#214e34] text-white shadow-xs"
+                : "bg-white dark:bg-zinc-800 text-[#608570] dark:text-zinc-300 border border-[#dce6dc] dark:border-white/10"
+            }`}
+          >
+            Telemetry &amp; Logs
+          </button>
+        </div>
 
         {/* ==================================================================== */}
         {/* PLATFORM TELEMETRY BANNER                                            */}
@@ -315,7 +364,7 @@ export function AdminPortal() {
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#608570] dark:text-zinc-400">
                 Indexed Research Docs
               </span>
-              <span className="material-symbols-outlined text-sm text-[#214e34]">library_books</span>
+              <AppIcon name="library_books" className="w-4 h-4 text-[#214e34]" />
             </div>
             <p className="text-2xl font-black text-[#111814] dark:text-white tracking-tight mt-1">
               {documents.length + 138} Papers
@@ -330,7 +379,7 @@ export function AdminPortal() {
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#608570] dark:text-zinc-400">
                 Qdrant Vector Chunks
               </span>
-              <span className="material-symbols-outlined text-sm text-blue-600">hub</span>
+              <AppIcon name="hub" className="w-4 h-4 text-blue-600" />
             </div>
             <p className="text-2xl font-black text-[#111814] dark:text-white tracking-tight mt-1">
               {vectorCount.toLocaleString()}
@@ -345,7 +394,7 @@ export function AdminPortal() {
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#608570] dark:text-zinc-400">
                 Cadastral PostGIS Sets
               </span>
-              <span className="material-symbols-outlined text-sm text-amber-600">map</span>
+              <AppIcon name="map" className="w-4 h-4 text-amber-600" />
             </div>
             <p className="text-2xl font-black text-[#111814] dark:text-white tracking-tight mt-1">28 Layers</p>
             <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
@@ -358,7 +407,7 @@ export function AdminPortal() {
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#608570] dark:text-zinc-400">
                 Engine Uptime
               </span>
-              <span className="material-symbols-outlined text-sm text-emerald-600">bolt</span>
+              <AppIcon name="bolt" className="w-4 h-4 text-emerald-600" />
             </div>
             <p className="text-2xl font-black text-[#111814] dark:text-white tracking-tight mt-1">99.9%</p>
             <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
@@ -382,7 +431,7 @@ export function AdminPortal() {
                 className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
               />
               <div className="w-14 h-14 rounded-2xl bg-[#ebf7eb] dark:bg-zinc-800 text-[#214e34] dark:text-emerald-400 flex items-center justify-center mx-auto">
-                <span className="material-symbols-outlined text-3xl">upload_file</span>
+                <AppIcon name="upload_file" className="w-8 h-8" />
               </div>
               <h3 className="text-base font-black text-[#111814] dark:text-white">
                 Upload ICAR Research Paper or State Package of Practices (POP)
@@ -425,7 +474,7 @@ export function AdminPortal() {
                   <div key={doc.id} className="py-3.5 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="w-9 h-9 rounded-xl bg-[#ebf7eb] dark:bg-zinc-800 text-[#214e34] dark:text-emerald-400 flex items-center justify-center shrink-0">
-                        <span className="material-symbols-outlined text-lg">description</span>
+                        <AppIcon name="description" className="w-5 h-5" />
                       </div>
                       <div className="min-w-0">
                         <div className="font-bold text-xs text-[#111814] dark:text-white truncate">
@@ -585,7 +634,7 @@ export function AdminPortal() {
                   onClick={() => setShowResetModal(true)}
                   className="px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1"
                 >
-                  <span className="material-symbols-outlined text-sm">restart_alt</span>
+                  <AppIcon name="restart_alt" className="w-4 h-4" />
                   <span>Reset All Demo State</span>
                 </button>
               </div>
@@ -606,8 +655,8 @@ export function AdminPortal() {
       {/* MODAL 1: CLUSTER TOPOLOGY ARCHITECTURE                               */}
       {/* ==================================================================== */}
       {showClusterModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#18221B] rounded-3xl max-w-md w-full p-6 border border-[#d2ded5] shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-[#18221B] rounded-3xl max-w-md w-full p-4 sm:p-6 border border-[#d2ded5] shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <span className="font-bold text-sm text-[#214e34] dark:text-emerald-400">
                 Ranchi Cluster Architecture (v2.5)
@@ -617,7 +666,7 @@ export function AdminPortal() {
                 onClick={() => setShowClusterModal(false)}
                 className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
-                <span className="material-symbols-outlined">close</span>
+                <AppIcon name="close" className="w-5 h-5" />
               </button>
             </div>
 
@@ -653,10 +702,10 @@ export function AdminPortal() {
       {/* MODAL 2: RESET DEMO STATE CONFIRMATION                               */}
       {/* ==================================================================== */}
       {showResetModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#18221B] rounded-3xl max-w-sm w-full p-6 border border-red-200 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-[#18221B] rounded-3xl max-w-sm w-full p-4 sm:p-6 border border-red-200 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center gap-2 text-red-600 font-bold text-base">
-              <span className="material-symbols-outlined">warning</span>
+              <AppIcon name="warning" className="w-5 h-5 text-red-600" />
               <span>Reset Demo State?</span>
             </div>
 
@@ -688,7 +737,7 @@ export function AdminPortal() {
       {/* Toast Popover */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#111814] text-white px-4 py-3 rounded-2xl shadow-2xl text-xs flex items-center gap-3 animate-bounce">
-          <span className="material-symbols-outlined text-emerald-400">{toast.icon}</span>
+          <AppIcon name={toast.icon} className="w-5 h-5 text-emerald-400" />
           <div>
             <div className="font-bold">{toast.title}</div>
             <div className="text-slate-300 text-[11px]">{toast.message}</div>

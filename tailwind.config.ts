@@ -84,8 +84,8 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["Inter", "sans-serif"],
-        display: ["Plus Jakarta Sans", "sans-serif"],
+        sans: ["var(--font-inter)", "Inter", "system-ui", "-apple-system", "sans-serif"],
+        display: ["var(--font-plus-jakarta)", "Plus Jakarta Sans", "sans-serif"],
       },
       borderRadius: {
         "20px": "20px",

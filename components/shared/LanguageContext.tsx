@@ -72,13 +72,33 @@ const translations: Record<Language, Record<string, string>> = {
 };
 
 const LanguageContext = createContext<LanguageContextType>({
-  language: "hi",
+  language: "en",
   setLanguage: () => {},
   t: (key: string) => key,
 });
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>("hi");
+  const [language, setLanguageState] = useState<Language>("en");
+
+  useEffect(() => {
+    try {
+      const savedLang = localStorage.getItem("kisanloop-lang");
+      if (savedLang === "hi" || savedLang === "en") {
+        setLanguageState(savedLang);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    try {
+      localStorage.setItem("kisanloop-lang", lang);
+    } catch {
+      // ignore
+    }
+  };
 
   const t = (key: string): string => {
     return translations[language]?.[key] || translations["en"]?.[key] || key;

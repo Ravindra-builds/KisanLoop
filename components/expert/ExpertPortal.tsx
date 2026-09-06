@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import AppIcon from "@/components/shared/AppIcon";
 
 interface CaseItem {
   id: string;
@@ -217,16 +218,16 @@ export function ExpertPortal() {
   });
 
   return (
-    <div className="bg-[#f9fbfa] dark:bg-[#121814] text-[#111814] dark:text-zinc-100 min-h-screen font-sans antialiased selection:bg-emerald-100 dark:selection:bg-emerald-950">
-      <div className="max-w-[1380px] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div className="bg-[#f9fbfa] dark:bg-[#121814] text-[#111814] dark:text-zinc-100 min-h-screen font-sans antialiased selection:bg-emerald-100 dark:selection:bg-emerald-950 w-full overflow-x-hidden">
+      <div className="max-w-[1380px] mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-4 w-full overflow-x-hidden">
         {/* ==================================================================== */}
         {/* TOP SHARED AGROTERRA EXPERT HEADER                                   */}
         {/* ==================================================================== */}
-        <header className="flex flex-wrap items-center justify-between border-b border-[#eaf0ed] dark:border-white/10 pb-4 mb-5 gap-4">
-          <div className="flex items-center gap-5 flex-wrap">
+        <header className="flex flex-wrap items-center justify-between border-b border-[#eaf0ed] dark:border-white/10 pb-4 mb-4 gap-4">
+          <div className="flex items-center gap-3 sm:gap-5 flex-wrap">
             <Link href="/" className="flex items-center gap-3 group">
               <div className="w-10 h-10 rounded-xl bg-[#214e34] text-white flex items-center justify-center shadow-xs">
-                <span className="material-symbols-outlined text-[22px]">psychology</span>
+                <AppIcon name="psychology" className="w-5 h-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -242,8 +243,8 @@ export function ExpertPortal() {
             </Link>
 
             {/* Search Input */}
-            <div className="relative min-w-[240px]">
-              <span className="material-symbols-outlined text-sm text-[#608570] absolute left-3 top-2.5">search</span>
+            <div className="relative w-full sm:w-auto sm:min-w-[200px]">
+              <AppIcon name="search" className="w-4 h-4  text-[#608570] absolute left-3 top-2.5" />
               <input
                 type="text"
                 value={searchQuery}
@@ -255,7 +256,7 @@ export function ExpertPortal() {
           </div>
 
           {/* Navigation & Action Buttons */}
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             {/* Nav Pill Group */}
             <div className="hidden xl:flex items-center gap-1 bg-[#eaf0ed] dark:bg-zinc-800 p-1 rounded-xl">
               <button
@@ -307,10 +308,8 @@ export function ExpertPortal() {
               disabled={syncingOffline}
               className="flex items-center gap-1.5 px-3 py-2 bg-[#214e34] hover:bg-[#143722] text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-60"
             >
-              <span className={`material-symbols-outlined text-sm ${syncingOffline ? "animate-spin" : ""}`}>
-                sync
-              </span>
-              <span>{syncingOffline ? "Syncing..." : "Sync Offline"}</span>
+              <AppIcon name="sync" className={`w-4 h-4 ${syncingOffline ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">{syncingOffline ? "Syncing..." : "Sync Offline"}</span>
             </button>
 
             {/* Emergency Alert Broadcast */}
@@ -319,8 +318,9 @@ export function ExpertPortal() {
               onClick={() => setShowEmergencyModal(true)}
               className="flex items-center gap-1.5 px-3 py-2 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900/40 rounded-xl text-xs font-bold transition cursor-pointer"
             >
-              <span className="material-symbols-outlined text-sm animate-pulse">warning</span>
-              <span>Emergency Alert</span>
+              <AppIcon name="warning" className="w-4 h-4  animate-pulse" />
+              <span className="hidden sm:inline">Emergency Alert</span>
+              <span className="sm:hidden">Alert</span>
             </button>
 
             {/* ICAR Authenticated Doctor Info */}
@@ -328,7 +328,7 @@ export function ExpertPortal() {
               <div className="hidden sm:flex flex-col text-right">
                 <span className="text-xs font-bold text-[#111814] dark:text-white">Dr. K. Patel</span>
                 <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold flex items-center justify-end gap-0.5">
-                  <span className="material-symbols-outlined text-[12px]">verified</span>
+                  <AppIcon name="verified" className="w-3 h-3" />
                   KVK Ranchi Pathology
                 </span>
               </div>
@@ -346,11 +346,55 @@ export function ExpertPortal() {
               className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-zinc-800 hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl border border-[#dce6dc] dark:border-white/10 hover:border-red-200 text-xs font-bold shadow-xs transition cursor-pointer"
               title="Log out of Expert Portal"
             >
-              <span className="material-symbols-outlined text-sm">logout</span>
-              <span>Logout</span>
+              <AppIcon name="logout" className="w-4 h-4" />
+              <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </header>
+
+        {/* Mobile Navigation Tabs for Small & Medium Screens */}
+        <div className="xl:hidden flex items-center gap-1.5 overflow-x-auto pb-2.5 mb-4 scrollbar-none">
+          <button
+            type="button"
+            onClick={() => setNavSection("queue")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              navSection === "queue"
+                ? "bg-[#214e34] text-white shadow-xs"
+                : "bg-white dark:bg-zinc-800 text-[#608570] dark:text-zinc-300 border border-[#dce6dc] dark:border-white/10"
+            }`}
+          >
+            Triage Queue
+          </button>
+          <button
+            type="button"
+            onClick={() => setNavSection("diagnostic")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              navSection === "diagnostic"
+                ? "bg-[#214e34] text-white shadow-xs"
+                : "bg-white dark:bg-zinc-800 text-[#608570] dark:text-zinc-300 border border-[#dce6dc] dark:border-white/10"
+            }`}
+          >
+            Differential Diagnostic
+          </button>
+          <button
+            type="button"
+            onClick={() => setNavSection("formulary")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              navSection === "formulary"
+                ? "bg-[#214e34] text-white shadow-xs"
+                : "bg-white dark:bg-zinc-800 text-[#608570] dark:text-zinc-300 border border-[#dce6dc] dark:border-white/10"
+            }`}
+          >
+            ICAR Formulary
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowPathogenMapModal(true)}
+            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-zinc-800 text-[#608570] dark:text-zinc-300 border border-[#dce6dc] dark:border-white/10 whitespace-nowrap transition cursor-pointer"
+          >
+            Pathogen Map
+          </button>
+        </div>
 
         {/* ==================================================================== */}
         {/* KPI METRIC CARDS                                                     */}
@@ -361,7 +405,7 @@ export function ExpertPortal() {
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#608570] dark:text-zinc-400">
                 Escalated Queue
               </span>
-              <span className="material-symbols-outlined text-sm text-[#214e34] dark:text-emerald-400">hourglass_top</span>
+              <AppIcon name="hourglass_top" className="w-4 h-4  text-[#214e34] dark:text-emerald-400" />
             </div>
             <p className="text-2xl font-black text-[#111814] dark:text-white tracking-tight mt-1">14 Pending</p>
             <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">+2 received today</span>
@@ -372,7 +416,7 @@ export function ExpertPortal() {
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#608570] dark:text-zinc-400">
                 Avg Triage Latency
               </span>
-              <span className="material-symbols-outlined text-sm text-blue-600">timer</span>
+              <AppIcon name="timer" className="w-4 h-4  text-blue-600" />
             </div>
             <p className="text-2xl font-black text-[#111814] dark:text-white tracking-tight mt-1">2.4 hrs</p>
             <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">-1.6h within ICAR SLA</span>
@@ -383,7 +427,7 @@ export function ExpertPortal() {
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#608570] dark:text-zinc-400">
                 Triage Accuracy
               </span>
-              <span className="material-symbols-outlined text-sm text-emerald-600">verified</span>
+              <AppIcon name="verified" className="w-4 h-4  text-emerald-600" />
             </div>
             <p className="text-2xl font-black text-[#111814] dark:text-white tracking-tight mt-1">98.6%</p>
             <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">+0.4% this cycle</span>
@@ -394,7 +438,7 @@ export function ExpertPortal() {
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#608570] dark:text-zinc-400">
                 Bio-Savings Validated
               </span>
-              <span className="material-symbols-outlined text-sm text-amber-600">savings</span>
+              <AppIcon name="savings" className="w-4 h-4  text-amber-600" />
             </div>
             <p className="text-2xl font-black text-[#111814] dark:text-white tracking-tight mt-1">₹14.8 Lakhs</p>
             <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
@@ -416,7 +460,7 @@ export function ExpertPortal() {
                 : "bg-white dark:bg-zinc-800 text-[#608570] dark:text-zinc-300 hover:text-[#111814] border border-[#dce6dc] dark:border-white/10"
             }`}
           >
-            <span className="material-symbols-outlined text-sm">filter_center_focus</span>
+            <AppIcon name="filter_center_focus" className="w-4 h-4" />
             <span>Low AI Confidence (&lt;85%)</span>
             <span className="ml-1 px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 text-[10px]">
               6
@@ -432,7 +476,7 @@ export function ExpertPortal() {
                 : "bg-white dark:bg-zinc-800 text-[#608570] dark:text-zinc-300 hover:text-[#111814] border border-[#dce6dc] dark:border-white/10"
             }`}
           >
-            <span className="material-symbols-outlined text-sm">coronavirus</span>
+            <AppIcon name="coronavirus" className="w-4 h-4" />
             <span>High-Risk Pathogen</span>
             <span className="ml-1 px-1.5 py-0.2 rounded-full bg-red-500/20 text-red-700 dark:text-red-300 text-[10px]">
               4
@@ -448,7 +492,7 @@ export function ExpertPortal() {
                 : "bg-white dark:bg-zinc-800 text-[#608570] dark:text-zinc-300 hover:text-[#111814] border border-[#dce6dc] dark:border-white/10"
             }`}
           >
-            <span className="material-symbols-outlined text-sm">contact_phone</span>
+            <AppIcon name="contact_phone" className="w-4 h-4" />
             <span>Farmer Escalation</span>
             <span className="ml-1 px-1.5 py-0.2 rounded-full bg-blue-500/20 text-blue-700 dark:text-blue-300 text-[10px]">
               3
@@ -464,7 +508,7 @@ export function ExpertPortal() {
                 : "bg-white dark:bg-zinc-800 text-[#608570] dark:text-zinc-300 hover:text-[#111814] border border-[#dce6dc] dark:border-white/10"
             }`}
           >
-            <span className="material-symbols-outlined text-sm">check_circle</span>
+            <AppIcon name="check_circle" className="w-4 h-4" />
             <span>Approved &amp; Dispatched</span>
             <span className="ml-1 px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[10px]">
               28
@@ -556,7 +600,7 @@ export function ExpertPortal() {
 
                       <div className="mt-3 pt-2.5 border-t border-[#f0f4f1] dark:border-white/10 flex items-center justify-between text-[11px]">
                         <span className="text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-1">
-                          <span className="material-symbols-outlined text-[14px]">psychology</span>
+                          <AppIcon name="psychology" className="w-3.5 h-3.5" />
                           {c.aiConfidence}% AI Confidence
                         </span>
                         <span
@@ -603,7 +647,7 @@ export function ExpertPortal() {
                     onClick={() => setShowAudioRecorderModal(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#dce6dc] dark:border-white/10 hover:bg-[#eaf0ed] text-xs font-bold text-[#111814] dark:text-white transition cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-sm text-[#214e34] dark:text-emerald-400">mic</span>
+                    <AppIcon name="mic" className="w-4 h-4  text-[#214e34] dark:text-emerald-400" />
                     <span>Attach Audio Voice Note</span>
                   </button>
                   <button
@@ -611,7 +655,7 @@ export function ExpertPortal() {
                     onClick={() => setShowPathogenMapModal(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#dce6dc] dark:border-white/10 hover:bg-[#eaf0ed] text-xs font-bold text-[#111814] dark:text-white transition cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-sm text-blue-600">map</span>
+                    <AppIcon name="map" className="w-4 h-4  text-blue-600" />
                     <span>Zone Map</span>
                   </button>
                 </div>
@@ -659,14 +703,14 @@ export function ExpertPortal() {
 
                   {selectedCase.farmerAudioNote && (
                     <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 text-[11px] text-amber-900 dark:text-amber-200 flex items-start gap-2">
-                      <span className="material-symbols-outlined text-sm text-amber-600 shrink-0 mt-0.5">volume_up</span>
+                      <AppIcon name="volume_up" className="w-4 h-4  text-amber-600 shrink-0 mt-0.5" />
                       <span className="italic">{selectedCase.farmerAudioNote}</span>
                     </div>
                   )}
 
                   {selectedCase.weatherWarning && (
                     <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/40 text-[11px] text-blue-900 dark:text-blue-200 flex items-start gap-2">
-                      <span className="material-symbols-outlined text-sm text-blue-600 shrink-0 mt-0.5">rainy</span>
+                      <AppIcon name="rainy" className="w-4 h-4  text-blue-600 shrink-0 mt-0.5" />
                       <span>{selectedCase.weatherWarning}</span>
                     </div>
                   )}
@@ -725,7 +769,7 @@ export function ExpertPortal() {
               <div className="p-4 rounded-2xl bg-[#f4f8f5] dark:bg-[#151e18] border border-[#d2ded5] dark:border-white/10 space-y-3.5">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-[#214e34] dark:text-emerald-400">
-                    <span className="material-symbols-outlined text-sm">prescriptions</span>
+                    <AppIcon name="prescriptions" className="w-4 h-4" />
                     <span>State POP &amp; ICAR Approved Formulary Prescription</span>
                   </div>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300">
@@ -825,12 +869,12 @@ export function ExpertPortal() {
                 >
                   {submittingAction ? (
                     <span className="flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                      <AppIcon name="progress_activity" className="w-4 h-4  animate-spin" />
                       <span>Dispatching...</span>
                     </span>
                   ) : (
                     <>
-                      <span className="material-symbols-outlined text-base">send</span>
+                      <AppIcon name="send" className="w-[18px] h-[18px]" />
                       <span>Approve &amp; Dispatch Advisory</span>
                     </>
                   )}
@@ -845,11 +889,11 @@ export function ExpertPortal() {
       {/* MODAL 1: EMERGENCY ALERT BROADCAST                                   */}
       {/* ==================================================================== */}
       {showEmergencyModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#18221B] rounded-3xl max-w-lg w-full p-6 border border-red-200 dark:border-red-900/40 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-[#18221B] rounded-3xl max-w-lg w-full p-4 sm:p-6 border border-red-200 dark:border-red-900/40 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-red-600 font-black text-lg">
-                <span className="material-symbols-outlined text-2xl animate-pulse">crisis_alert</span>
+                <AppIcon name="crisis_alert" className="w-7 h-7  animate-pulse" />
                 <span>District Emergency Outbreak Alert</span>
               </div>
               <button
@@ -857,7 +901,7 @@ export function ExpertPortal() {
                 onClick={() => setShowEmergencyModal(false)}
                 className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
-                <span className="material-symbols-outlined">close</span>
+                <AppIcon name="close" className="w-5 h-5" />
               </button>
             </div>
 
@@ -896,11 +940,11 @@ export function ExpertPortal() {
       {/* MODAL 2: REGIONAL PATHOGEN MAP                                       */}
       {/* ==================================================================== */}
       {showPathogenMapModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#18221B] rounded-3xl max-w-2xl w-full p-6 border border-[#dce6dc] dark:border-white/10 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-[#18221B] rounded-3xl max-w-2xl w-full p-4 sm:p-6 border border-[#dce6dc] dark:border-white/10 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-[#214e34] dark:text-emerald-400 font-bold text-base">
-                <span className="material-symbols-outlined">map</span>
+                <AppIcon name="map" className="w-5 h-5" />
                 <span>Regional Pathogen Surveillance Map (Ranchi District)</span>
               </div>
               <button
@@ -908,7 +952,7 @@ export function ExpertPortal() {
                 onClick={() => setShowPathogenMapModal(false)}
                 className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
-                <span className="material-symbols-outlined">close</span>
+                <AppIcon name="close" className="w-5 h-5" />
               </button>
             </div>
 
@@ -960,11 +1004,11 @@ export function ExpertPortal() {
       {/* MODAL 3: AUDIO NOTE RECORDER                                         */}
       {/* ==================================================================== */}
       {showAudioRecorderModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#18221B] rounded-3xl max-w-md w-full p-6 border border-[#dce6dc] dark:border-white/10 shadow-2xl space-y-4 text-center">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-[#18221B] rounded-3xl max-w-md w-full p-4 sm:p-6 border border-[#dce6dc] dark:border-white/10 shadow-2xl space-y-4 text-center max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-[#214e34] dark:text-emerald-400 font-bold text-base">
-                <span className="material-symbols-outlined">mic</span>
+                <AppIcon name="mic" className="w-5 h-5" />
                 <span>Record Voice Note to {selectedCase.farmerName}</span>
               </div>
               <button
@@ -972,7 +1016,7 @@ export function ExpertPortal() {
                 onClick={() => setShowAudioRecorderModal(false)}
                 className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
-                <span className="material-symbols-outlined">close</span>
+                <AppIcon name="close" className="w-5 h-5" />
               </button>
             </div>
 
@@ -994,9 +1038,7 @@ export function ExpertPortal() {
                     : "bg-[#214e34] text-white hover:scale-105"
                 }`}
               >
-                <span className="material-symbols-outlined text-3xl">
-                  {isRecordingAudio ? "stop" : "mic"}
-                </span>
+                <AppIcon name={isRecordingAudio ? "stop" : "mic"} className="w-9 h-9" />
               </button>
 
               <p className="text-xs text-[#608570] dark:text-zinc-300">
@@ -1035,7 +1077,7 @@ export function ExpertPortal() {
       {/* Toast Popover */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#111814] text-white px-4 py-3 rounded-2xl shadow-2xl text-xs flex items-center gap-3 animate-bounce">
-          <span className="material-symbols-outlined text-emerald-400">{toast.icon}</span>
+          <AppIcon name={toast.icon} className="w-5 h-5 text-emerald-400" />
           <div>
             <div className="font-bold">{toast.title}</div>
             <div className="text-slate-300 text-[11px]">{toast.message}</div>

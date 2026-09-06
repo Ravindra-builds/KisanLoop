@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import AppIcon from "@/components/shared/AppIcon";
 
 interface BlockData {
   name: string;
@@ -63,7 +64,7 @@ export function GovernmentDashboard() {
   };
 
   return (
-    <div className="bg-[#f1fcf1] dark:bg-[#121814] text-[#141e17] dark:text-zinc-100 min-h-screen font-sans flex antialiased selection:bg-emerald-100 dark:selection:bg-emerald-950">
+    <div className="bg-[#f1fcf1] dark:bg-[#121814] text-[#141e17] dark:text-zinc-100 min-h-screen font-sans flex antialiased selection:bg-emerald-100 dark:selection:bg-emerald-950 w-full overflow-x-hidden">
       {/* ==================================================================== */}
       {/* LEFT GLOBAL COMMAND SIDEBAR                                          */}
       {/* ==================================================================== */}
@@ -106,7 +107,7 @@ export function GovernmentDashboard() {
                   : "text-[#4f6351] dark:text-zinc-300 hover:bg-[#eaf0ed] dark:hover:bg-zinc-800"
               }`}
             >
-              <span className="material-symbols-outlined text-lg">dashboard</span>
+              <AppIcon name="dashboard" className="w-6 h-6" />
               <span>Overview &amp; KPIs</span>
             </button>
 
@@ -119,7 +120,7 @@ export function GovernmentDashboard() {
                   : "text-[#4f6351] dark:text-zinc-300 hover:bg-[#eaf0ed] dark:hover:bg-zinc-800"
               }`}
             >
-              <span className="material-symbols-outlined text-lg">conversion_path</span>
+              <AppIcon name="conversion_path" className="w-6 h-6" />
               <span>Adoption Funnel</span>
             </button>
 
@@ -132,7 +133,7 @@ export function GovernmentDashboard() {
                   : "text-[#4f6351] dark:text-zinc-300 hover:bg-[#eaf0ed] dark:hover:bg-zinc-800"
               }`}
             >
-              <span className="material-symbols-outlined text-lg">block</span>
+              <AppIcon name="block" className="w-6 h-6" />
               <span>Barrier Analytics</span>
             </button>
 
@@ -145,7 +146,7 @@ export function GovernmentDashboard() {
                   : "text-[#4f6351] dark:text-zinc-300 hover:bg-[#eaf0ed] dark:hover:bg-zinc-800"
               }`}
             >
-              <span className="material-symbols-outlined text-lg">map</span>
+              <AppIcon name="map" className="w-6 h-6" />
               <span>PostGIS Hotspot Map</span>
             </button>
 
@@ -158,7 +159,7 @@ export function GovernmentDashboard() {
                   : "text-[#4f6351] dark:text-zinc-300 hover:bg-[#eaf0ed] dark:hover:bg-zinc-800"
               }`}
             >
-              <span className="material-symbols-outlined text-lg">verified_user</span>
+              <AppIcon name="verified_user" className="w-6 h-6" />
               <span>Verified Outcomes</span>
             </button>
 
@@ -175,7 +176,7 @@ export function GovernmentDashboard() {
                     className="p-1 text-slate-500 hover:text-black dark:hover:text-white cursor-pointer"
                     title="Adjust Mandate Target"
                   >
-                    <span className="material-symbols-outlined text-xs">tune</span>
+                    <AppIcon name="tune" className="w-5 h-5 text-xs" />
                   </button>
                 </div>
                 <div className="text-xs font-semibold text-[#141e17] dark:text-zinc-200">
@@ -232,7 +233,7 @@ export function GovernmentDashboard() {
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-red-200 dark:border-red-900/40"
           >
-            <span className="material-symbols-outlined text-[16px]">logout</span>
+            <AppIcon name="logout" className="w-4 h-4" />
             <span>Logout from Govt Desk</span>
           </button>
         </div>
@@ -241,30 +242,30 @@ export function GovernmentDashboard() {
       {/* ==================================================================== */}
       {/* MAIN WORK SURFACE                                                    */}
       {/* ==================================================================== */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+      <div className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden">
         {/* Top Header Bar */}
-        <header className="h-16 px-6 bg-white dark:bg-[#18221B] border-b border-[#e5ece7] dark:border-white/10 flex items-center justify-between shrink-0 sticky top-0 z-10 shadow-2xs">
-          <div className="flex items-center gap-3">
-            <div className="flex flex-col">
+        <header className="h-16 px-3 sm:px-6 bg-white dark:bg-[#18221B] border-b border-[#e5ece7] dark:border-white/10 flex items-center justify-between shrink-0 sticky top-0 z-10 shadow-2xs w-full">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-2">
-                <h1 className="font-black text-base md:text-lg text-[#05371f] dark:text-emerald-400 leading-tight">
+                <h1 className="font-black text-sm sm:text-base md:text-lg text-[#05371f] dark:text-emerald-400 leading-tight truncate">
                   District Agriculture Decision Center
                 </h1>
-                <span className="px-2 py-0.5 bg-[#cfe6cf] dark:bg-zinc-800 text-[#183323] dark:text-emerald-300 rounded text-[11px] font-bold">
+                <span className="px-2 py-0.5 bg-[#cfe6cf] dark:bg-zinc-800 text-[#183323] dark:text-emerald-300 rounded text-[10px] sm:text-[11px] font-bold shrink-0">
                   {selectedDistrict}
                 </span>
               </div>
-              <p className="text-xs text-[#4f6351] dark:text-zinc-400">
+              <p className="text-[11px] sm:text-xs text-[#4f6351] dark:text-zinc-400 truncate hidden sm:block">
                 18 Blocks Covered • 4,820 Active Cadastral Plots Monitored
               </p>
             </div>
           </div>
 
           {/* Action Bar */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Season Selector */}
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-[#ebf7eb] dark:bg-zinc-800 rounded-xl text-xs font-semibold text-[#05371f] dark:text-zinc-200 border border-[#d2ded5] dark:border-white/10">
-              <span className="material-symbols-outlined text-sm text-[#4f6351]">calendar_today</span>
+            <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-[#ebf7eb] dark:bg-zinc-800 rounded-xl text-xs font-semibold text-[#05371f] dark:text-zinc-200 border border-[#d2ded5] dark:border-white/10">
+              <AppIcon name="calendar_today" className="w-4 h-4  text-[#4f6351]" />
               <span>{selectedSeason}</span>
             </div>
 
@@ -272,27 +273,87 @@ export function GovernmentDashboard() {
             <button
               type="button"
               onClick={() => setShowExportModal(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-[#05371f] hover:bg-[#163624] text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+              className="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 bg-[#05371f] hover:bg-[#163624] text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
             >
-              <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
+              <AppIcon name="picture_as_pdf" className="w-4 h-4" />
               <span className="hidden sm:inline">Export District Brief</span>
+              <span className="sm:hidden">Brief</span>
             </button>
 
             {/* Quick Header Logout Button */}
             <button
               type="button"
               onClick={handleLogout}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-zinc-800 hover:bg-red-50 text-red-600 rounded-xl border border-[#dce6dc] dark:border-white/10 hover:border-red-200 text-xs font-bold shadow-xs transition cursor-pointer"
+              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-white dark:bg-zinc-800 hover:bg-red-50 text-red-600 rounded-xl border border-[#dce6dc] dark:border-white/10 hover:border-red-200 text-xs font-bold shadow-xs transition cursor-pointer"
               title="Logout"
             >
-              <span className="material-symbols-outlined text-sm">logout</span>
+              <AppIcon name="logout" className="w-4 h-4" />
               <span className="hidden md:inline">Logout</span>
             </button>
           </div>
         </header>
 
+        {/* Mobile Navigation Tabs for Small Screens */}
+        <div className="md:hidden flex items-center gap-1.5 overflow-x-auto px-3 py-2 bg-white dark:bg-[#18221B] border-b border-[#e5ece7] dark:border-white/10 scrollbar-none w-full">
+          <button
+            type="button"
+            onClick={() => setActiveModule("overview")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeModule === "overview"
+                ? "bg-[#214e34] text-white shadow-xs"
+                : "bg-[#f1fcf1] dark:bg-zinc-800 text-[#4f6351] dark:text-zinc-300 border border-[#dce6dc] dark:border-white/10"
+            }`}
+          >
+            Overview &amp; KPIs
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveModule("funnel")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeModule === "funnel"
+                ? "bg-[#214e34] text-white shadow-xs"
+                : "bg-[#f1fcf1] dark:bg-zinc-800 text-[#4f6351] dark:text-zinc-300 border border-[#dce6dc] dark:border-white/10"
+            }`}
+          >
+            Adoption Funnel
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveModule("barriers")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeModule === "barriers"
+                ? "bg-[#214e34] text-white shadow-xs"
+                : "bg-[#f1fcf1] dark:bg-zinc-800 text-[#4f6351] dark:text-zinc-300 border border-[#dce6dc] dark:border-white/10"
+            }`}
+          >
+            Barrier Analytics
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveModule("gis-map")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeModule === "gis-map"
+                ? "bg-[#214e34] text-white shadow-xs"
+                : "bg-[#f1fcf1] dark:bg-zinc-800 text-[#4f6351] dark:text-zinc-300 border border-[#dce6dc] dark:border-white/10"
+            }`}
+          >
+            Hotspot Map
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveModule("outcomes")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeModule === "outcomes"
+                ? "bg-[#214e34] text-white shadow-xs"
+                : "bg-[#f1fcf1] dark:bg-zinc-800 text-[#4f6351] dark:text-zinc-300 border border-[#dce6dc] dark:border-white/10"
+            }`}
+          >
+            Field Outcomes
+          </button>
+        </div>
+
         {/* Content Body */}
-        <main className="p-6 md:p-8 max-w-[1320px] mx-auto w-full space-y-6">
+        <main className="p-3.5 sm:p-6 md:p-8 max-w-[1320px] mx-auto w-full space-y-6 overflow-x-hidden">
           {/* ================================================================= */}
           {/* MODULE 1: OVERVIEW & 4 KPI BENCHMARKS                             */}
           {/* ================================================================= */}
@@ -333,9 +394,7 @@ export function GovernmentDashboard() {
                         d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                       />
                     </svg>
-                    <span className="material-symbols-outlined text-lg text-[#05371f] dark:text-emerald-400 absolute">
-                      speed
-                    </span>
+                    <AppIcon name="speed" className="w-6 h-6  text-[#05371f] dark:text-emerald-400 absolute" />
                   </div>
                 </div>
 
@@ -345,7 +404,7 @@ export function GovernmentDashboard() {
                     <span className="text-[11px] font-bold uppercase tracking-wider text-[#4f6351] dark:text-zinc-400">
                       Actions Verified Done
                     </span>
-                    <span className="material-symbols-outlined text-sm text-[#05371f] dark:text-emerald-400">check_circle</span>
+                    <AppIcon name="check_circle" className="w-4 h-4  text-[#05371f] dark:text-emerald-400" />
                   </div>
                   <div className="text-3xl font-black text-[#141e17] dark:text-white tracking-tight">
                     5,100
@@ -361,7 +420,7 @@ export function GovernmentDashboard() {
                     <span className="text-[11px] font-bold uppercase tracking-wider text-[#4f6351] dark:text-zinc-400">
                       Input Barrier Rate
                     </span>
-                    <span className="material-symbols-outlined text-sm text-amber-600">report_problem</span>
+                    <AppIcon name="report_problem" className="w-4 h-4  text-amber-600" />
                   </div>
                   <div className="text-3xl font-black text-[#141e17] dark:text-white tracking-tight">
                     28.4%
@@ -377,7 +436,7 @@ export function GovernmentDashboard() {
                     <span className="text-[11px] font-bold uppercase tracking-wider text-[#4f6351] dark:text-zinc-400">
                       Conserved Groundwater
                     </span>
-                    <span className="material-symbols-outlined text-sm text-blue-600">water_drop</span>
+                    <AppIcon name="water_drop" className="w-4 h-4  text-blue-600" />
                   </div>
                   <div className="text-3xl font-black text-[#141e17] dark:text-white tracking-tight">
                     1.8M L
@@ -558,7 +617,7 @@ export function GovernmentDashboard() {
                 {/* Remedial Action Box */}
                 <div className="p-4 bg-[#ebf7eb] dark:bg-zinc-900/60 rounded-2xl border border-[#d2ded5] dark:border-white/10 space-y-3">
                   <div className="font-bold text-xs text-[#05371f] dark:text-emerald-400 flex items-center gap-1.5">
-                    <span className="material-symbols-outlined text-sm">inventory</span>
+                    <AppIcon name="inventory" className="w-4 h-4" />
                     <span>Policy Recommendation for Ranchi Extension</span>
                   </div>
                   <p className="text-xs text-[#4f6351] dark:text-zinc-300 leading-relaxed">
@@ -687,7 +746,7 @@ export function GovernmentDashboard() {
           <div className="bg-white dark:bg-[#18221B] rounded-3xl max-w-md w-full p-6 border border-[#d2ded5] shadow-2xl space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-[#05371f] dark:text-emerald-400 font-black text-base">
-                <span className="material-symbols-outlined">picture_as_pdf</span>
+                <AppIcon name="picture_as_pdf" className="w-5 h-5" />
                 <span>Export District Agronomic Brief</span>
               </div>
               <button
@@ -695,7 +754,7 @@ export function GovernmentDashboard() {
                 onClick={() => setShowExportModal(false)}
                 className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
-                <span className="material-symbols-outlined">close</span>
+                <AppIcon name="close" className="w-5 h-5" />
               </button>
             </div>
 
@@ -729,12 +788,12 @@ export function GovernmentDashboard() {
               >
                 {exporting ? (
                   <>
-                    <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                    <AppIcon name="progress_activity" className="w-4 h-4  animate-spin" />
                     <span>Compiling PDF...</span>
                   </>
                 ) : (
                   <>
-                    <span className="material-symbols-outlined text-sm">download</span>
+                    <AppIcon name="download" className="w-4 h-4" />
                     <span>Download Official PDF</span>
                   </>
                 )}
@@ -759,7 +818,7 @@ export function GovernmentDashboard() {
                 onClick={() => setShowTargetModal(false)}
                 className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
-                <span className="material-symbols-outlined">close</span>
+                <AppIcon name="close" className="w-5 h-5" />
               </button>
             </div>
 
@@ -801,7 +860,7 @@ export function GovernmentDashboard() {
       {/* Toast Popover */}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#141e17] text-white px-4 py-3 rounded-2xl shadow-2xl text-xs flex items-center gap-3 animate-bounce">
-          <span className="material-symbols-outlined text-emerald-400">{toast.icon}</span>
+          <AppIcon name={toast.icon} className="w-5 h-5 text-emerald-400" />
           <div>
             <div className="font-bold">{toast.title}</div>
             <div className="text-slate-300 text-[11px]">{toast.message}</div>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import AppIcon from "@/components/shared/AppIcon";
 
 export function FarmerPortal() {
   const router = useRouter();
@@ -10,7 +11,7 @@ export function FarmerPortal() {
   const [currentTab, setCurrentTab] = useState<"today" | "farm" | "actions" | "journey" | "expert" | "profile">("today");
 
   // Language & Theme State
-  const [lang, setLang] = useState<"hi" | "en">("hi");
+  const [lang, setLang] = useState<"hi" | "en">("en");
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   // Backend Data State
@@ -96,12 +97,29 @@ export function FarmerPortal() {
   useEffect(() => {
     fetchData();
 
-    // Check system preference or saved theme
-    const savedTheme = localStorage.getItem("kisanloop-theme");
-    if (savedTheme === "dark" || (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-      setIsDarkMode(true);
-      document.documentElement.classList.add("dark");
-    } else {
+    // Load language preference (defaults to "en" for first-time visitors)
+    try {
+      const savedLang = localStorage.getItem("kisanloop-lang");
+      if (savedLang === "hi" || savedLang === "en") {
+        setLang(savedLang);
+      } else {
+        setLang("en");
+      }
+    } catch {
+      setLang("en");
+    }
+
+    // Load theme preference (defaults to light mode for first-time visitors)
+    try {
+      const savedTheme = localStorage.getItem("kisanloop-theme");
+      if (savedTheme === "dark") {
+        setIsDarkMode(true);
+        document.documentElement.classList.add("dark");
+      } else {
+        setIsDarkMode(false);
+        document.documentElement.classList.remove("dark");
+      }
+    } catch {
       setIsDarkMode(false);
       document.documentElement.classList.remove("dark");
     }
@@ -112,15 +130,25 @@ export function FarmerPortal() {
     setIsDarkMode(nextDark);
     if (nextDark) {
       document.documentElement.classList.add("dark");
-      localStorage.setItem("kisanloop-theme", "dark");
+      try {
+        localStorage.setItem("kisanloop-theme", "dark");
+      } catch {}
     } else {
       document.documentElement.classList.remove("dark");
-      localStorage.setItem("kisanloop-theme", "light");
+      try {
+        localStorage.setItem("kisanloop-theme", "light");
+      } catch {}
     }
   };
 
   const toggleLanguage = () => {
-    setLang((prev) => (prev === "en" ? "hi" : "en"));
+    setLang((prev) => {
+      const next = prev === "en" ? "hi" : "en";
+      try {
+        localStorage.setItem("kisanloop-lang", next);
+      } catch {}
+      return next;
+    });
   };
 
   // Cadastral Zone Data
@@ -314,19 +342,19 @@ export function FarmerPortal() {
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-[#214E34] text-white font-bold text-sm px-6 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-bounce">
-          <span className="material-symbols-outlined text-[20px]">check_circle</span>
+          <AppIcon name="check_circle" className="w-5 h-5" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* ==================== LEFT NAVIGATION SIDEBAR ==================== */}
-      <aside className="fixed left-0 top-0 h-full w-72 bg-white z-40 flex flex-col justify-between border-r border-[#ebeae2] shadow-sm transition-colors duration-200">
+      <aside className="hidden lg:flex fixed left-0 top-0 h-full w-72 bg-white z-40 flex-col justify-between border-r border-[#ebeae2] shadow-sm transition-colors duration-200">
         <div className="flex flex-col flex-1 min-h-0">
           {/* App Header & Brand */}
           <div className="h-20 px-5 flex items-center justify-between border-b border-[#ebeae2]">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentTab("today")}>
               <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-sm">
-                <span className="material-symbols-outlined text-[24px]">eco</span>
+                <AppIcon name="eco" className="w-6 h-6" />
               </div>
               <div className="flex flex-col">
                 <span className="font-display font-extrabold text-lg text-charcoal leading-tight tracking-tight">
@@ -350,7 +378,7 @@ export function FarmerPortal() {
               }`}
               onClick={() => setCurrentTab("today")}
             >
-              <span className="material-symbols-outlined text-[22px]">cottage</span>
+              <AppIcon name="cottage" className="w-5 h-5" />
               <div className="flex flex-col">
                 <span className="font-bold text-sm leading-tight">
                   {lang === "hi" ? "खेत आज" : "Today"}
@@ -369,7 +397,7 @@ export function FarmerPortal() {
               }`}
               onClick={() => setCurrentTab("farm")}
             >
-              <span className="material-symbols-outlined text-[22px]">map</span>
+              <AppIcon name="map" className="w-5 h-5" />
               <div className="flex flex-col">
                 <span className="font-bold text-sm leading-tight">
                   {lang === "hi" ? "मेरा खेत व नक्शा" : "My Farm & Map"}
@@ -389,7 +417,7 @@ export function FarmerPortal() {
               onClick={() => setCurrentTab("actions")}
             >
               <div className="relative">
-                <span className="material-symbols-outlined text-[22px]">check_circle</span>
+                <AppIcon name="check_circle" className="w-5 h-5" />
                 <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-500"></span>
               </div>
               <div className="flex flex-col">
@@ -410,7 +438,7 @@ export function FarmerPortal() {
               }`}
               onClick={() => setCurrentTab("journey")}
             >
-              <span className="material-symbols-outlined text-[22px]">all_inclusive</span>
+              <AppIcon name="all_inclusive" className="w-5 h-5" />
               <div className="flex flex-col">
                 <span className="font-bold text-sm leading-tight">
                   {lang === "hi" ? "सफ़र व सीख" : "Farm Journey"}
@@ -429,7 +457,7 @@ export function FarmerPortal() {
               }`}
               onClick={() => setCurrentTab("expert")}
             >
-              <span className="material-symbols-outlined text-[22px]">support_agent</span>
+              <AppIcon name="support_agent" className="w-5 h-5" />
               <div className="flex flex-col flex-1">
                 <span className="font-bold text-sm leading-tight">
                   {lang === "hi" ? "कृषि विशेषज्ञ व KVK" : "Expert Help"}
@@ -449,7 +477,7 @@ export function FarmerPortal() {
               }`}
               onClick={() => setCurrentTab("profile")}
             >
-              <span className="material-symbols-outlined text-[22px]">badge</span>
+              <AppIcon name="badge" className="w-5 h-5" />
               <div className="flex flex-col">
                 <span className="font-bold text-sm leading-tight">
                   {lang === "hi" ? "किसान प्रोफाइल" : "Farm Profile"}
@@ -471,7 +499,7 @@ export function FarmerPortal() {
               onClick={toggleLanguage}
               title="Toggle English / हिन्दी"
             >
-              <span className="material-symbols-outlined text-[16px] text-primary">translate</span>
+              <AppIcon name="translate" className="w-4 h-4  text-primary" />
               <span>{lang === "hi" ? "English" : "हिन्दी"}</span>
             </button>
 
@@ -481,9 +509,7 @@ export function FarmerPortal() {
               onClick={toggleDarkMode}
               title="Toggle Theme"
             >
-              <span className="material-symbols-outlined text-[18px]">
-                {isDarkMode ? "light_mode" : "dark_mode"}
-              </span>
+              <AppIcon name={isDarkMode ? "light_mode" : "dark_mode"} className="w-[18px] h-[18px]" />
             </button>
           </div>
 
@@ -505,9 +531,7 @@ export function FarmerPortal() {
                 {farmTitle} • {acres}
               </span>
             </div>
-            <span className="material-symbols-outlined text-secondary text-[18px] group-hover:translate-x-0.5 transition-transform">
-              chevron_right
-            </span>
+            <AppIcon name="chevron_right" className="w-[18px] h-[18px] text-secondary group-hover:translate-x-0.5 transition-transform" />
           </div>
 
           {/* Sidebar Logout Button */}
@@ -517,57 +541,69 @@ export function FarmerPortal() {
             className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-red-200"
             title="Log Out"
           >
-            <span className="material-symbols-outlined text-[18px]">logout</span>
+            <AppIcon name="logout" className="w-[18px] h-[18px]" />
             <span>{lang === "hi" ? "लॉगआउट (Logout)" : "Log Out"}</span>
           </button>
         </div>
       </aside>
 
       {/* ==================== MAIN CONTENT WRAPPER ==================== */}
-      <div className="pl-72 min-h-screen flex flex-col">
+      <div className="lg:pl-72 pl-0 min-h-screen flex flex-col w-full max-w-full overflow-x-hidden">
         {/* Top Utility Bar */}
-        <header className="h-16 px-8 bg-[#F6F5EF]/95 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between border-b border-[#ebeae2] transition-colors">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1 bg-white rounded-full border border-[#ebeae2] shadow-xs">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-xs font-semibold text-primary">
-                {lang === "hi" ? "ऑफलाइन तैयार • सभी डेटा सुरक्षित" : "Offline Ready • Telemetry Synced"}
+        <header className="h-16 px-3 sm:px-6 lg:px-8 bg-[#F6F5EF]/95 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between border-b border-[#ebeae2] transition-colors w-full">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            {/* Mobile Brand Logo */}
+            <div className="lg:hidden flex items-center gap-2 cursor-pointer shrink-0" onClick={() => setCurrentTab("today")}>
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white shadow-xs">
+                <AppIcon name="eco" className="w-5 h-5" />
+              </div>
+              <span className="font-display font-extrabold text-base text-charcoal leading-none">
+                Kisan<span className="text-[#214E34]">LOOP</span>
               </span>
             </div>
-            <span className="text-xs text-secondary hidden md:inline">|</span>
-            <span className="text-xs text-secondary font-medium hidden md:inline">
+
+            <div className="hidden sm:flex items-center gap-2 px-2.5 sm:px-3 py-1 bg-white rounded-full border border-[#ebeae2] shadow-xs shrink-0">
+              <span className="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-[11px] sm:text-xs font-semibold text-primary truncate">
+                {lang === "hi" ? "ऑफलाइन तैयार • सिंक" : "Offline Ready • Synced"}
+              </span>
+            </div>
+            <span className="text-xs text-secondary hidden xl:inline">|</span>
+            <span className="text-xs text-secondary font-medium hidden xl:inline truncate">
               {lang === "hi"
                 ? "मौसम: 29°C, 78% आर्द्रता, कल 42mm बारिश की चेतावनी"
                 : "Weather Forecast: 29°C, 78% Humidity, 42mm rain tomorrow"}
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <button
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#214E34] hover:bg-[#163624] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full bg-[#214E34] hover:bg-[#163624] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
               onClick={() => setShowVoiceModal(true)}
+              title={lang === "hi" ? "बोलकर पूछें" : "Ask KisanLoop Voice"}
             >
-              <span className="material-symbols-outlined text-[16px] animate-pulse">mic</span>
-              <span>{lang === "hi" ? "बोलकर पूछें" : "Ask KisanLoop Voice"}</span>
+              <AppIcon name="mic" className="w-4 h-4  animate-pulse" />
+              <span className="hidden sm:inline">{lang === "hi" ? "बोलकर पूछें" : "Ask KisanLoop"}</span>
+              <span className="sm:hidden">{lang === "hi" ? "आवाज" : "Voice"}</span>
             </button>
-            <div className="px-3 py-1 bg-white border border-[#ebeae2] rounded-full text-xs font-semibold text-charcoal shadow-xs">
+            <div className="hidden md:flex px-3 py-1 bg-white border border-[#ebeae2] rounded-full text-xs font-semibold text-charcoal shadow-xs">
               🌾 <span>{lang === "hi" ? "धान (IR-64) • कल्ले फूटने की अवस्था" : "Rice (धान) • Day 38 (Tillering)"}</span>
             </div>
             {/* Quick Header Logout Button */}
             <button
               type="button"
               onClick={handleLogout}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-red-50 text-red-600 rounded-full border border-[#ebeae2] hover:border-red-200 text-xs font-bold shadow-xs transition-all cursor-pointer"
+              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-white hover:bg-red-50 text-red-600 rounded-full border border-[#ebeae2] hover:border-red-200 text-xs font-bold shadow-xs transition-all cursor-pointer"
               title="Log Out"
             >
-              <span className="material-symbols-outlined text-[16px]">logout</span>
+              <AppIcon name="logout" className="w-4 h-4" />
               <span className="hidden sm:inline">{lang === "hi" ? "लॉगआउट" : "Log Out"}</span>
             </button>
           </div>
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 p-8 max-w-6xl mx-auto w-full space-y-7">
+        <main className="flex-1 p-3.5 sm:p-5 lg:p-8 max-w-6xl mx-auto w-full space-y-5 sm:space-y-7 pb-24 lg:pb-8 overflow-x-hidden">
           {/* =============================================================== */}
           {/* TAB 1: TODAY (खेत आज)                                           */}
           {/* =============================================================== */}
@@ -575,17 +611,17 @@ export function FarmerPortal() {
             <div className="space-y-7 animate-in fade-in duration-300">
               {/* Hero Banner with Health Score Badge */}
               <section className="relative rounded-20px overflow-hidden shadow-sm border border-[#e8e7de] bg-white">
-                <div className="relative h-64 sm:h-72 w-full overflow-hidden">
+                <div className="relative min-h-[19rem] sm:min-h-[18rem] sm:h-72 w-full overflow-hidden">
                   <img
                     alt="Farmer Ravi Kumar in field"
                     className="w-full h-full object-cover object-[center_28%]"
                     src="https://lh3.googleusercontent.com/aida/AEtjO1WfL7Zww8bvMK1Aop_QT-JiLbWI1qR6kIopujRtc1gm9onr9Kqt6NYx15o3uZTsY89uKYyztPfjWUgvEvu9RVl6W1wRUWMkXfEwXVIO-C_UFvGXFP0_d8qIEb8LmqjIReVHTZ9g04fnBDGlWdOtf8QTGxTqTeF4s-pYxHyfDiQ6SrZELPlo1A0zHoD3GeTpC543ZMC4zLJuL0II22NJLzLpgVeFpljBd0zI8iP9WGTMAcDV5vkZpor_3nY"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-primary/95 via-primary/60 to-transparent"></div>
-                  <div className="absolute bottom-0 left-0 right-0 p-7 sm:p-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4 text-white">
+                  <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-7 lg:p-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4 text-white">
                     <div className="space-y-1.5">
                       <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/25 text-xs font-semibold text-white">
-                        <span className="material-symbols-outlined text-[16px] text-amber-300">wb_sunny</span>
+                        <AppIcon name="wb_sunny" className="w-4 h-4  text-amber-300" />
                         <span>
                           {lang === "hi"
                             ? "आज • 29°C धूप और अधिक नमी (78%)"
@@ -628,7 +664,7 @@ export function FarmerPortal() {
               </section>
 
               {/* THE HERO ACTION CARD */}
-              <section className="bg-white rounded-2xl p-7 lg:p-9 shadow-sm border-2 border-emerald-800/20 card-hover relative overflow-hidden">
+              <section className="bg-white rounded-2xl p-4 sm:p-6 lg:p-9 shadow-sm border-2 border-emerald-800/20 card-hover relative overflow-hidden">
                 <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-primary via-emerald-600 to-amber-500"></div>
                 <div className="flex flex-col lg:flex-row gap-8 items-start justify-between">
                   <div className="flex-1 space-y-4">
@@ -698,14 +734,14 @@ export function FarmerPortal() {
                         onClick={() => setShowWalkthroughModal(true)}
                       >
                         <span>{lang === "hi" ? "3-कदम जांच शुरू करें" : "Start 3-Step Walkthrough"}</span>
-                        <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                        <AppIcon name="arrow_forward" className="w-[18px] h-[18px]" />
                       </button>
 
                       <button
                         className="px-4 py-3 rounded-xl bg-[#F6F5EF] hover:bg-emerald-100 text-primary font-bold text-xs flex items-center gap-1.5 border border-[#e8e7de] transition-colors cursor-pointer"
                         onClick={() => setShowWhyDrawer(true)}
                       >
-                        <span className="material-symbols-outlined text-[18px]">info</span>
+                        <AppIcon name="info" className="w-[18px] h-[18px]" />
                         <span>{lang === "hi" ? "यह सलाह क्यों दी गई?" : "Why this recommendation?"}</span>
                       </button>
 
@@ -713,7 +749,7 @@ export function FarmerPortal() {
                         className="px-4 py-3 rounded-xl bg-[#F6F5EF] hover:bg-amber-100 text-amber-900 font-bold text-xs flex items-center gap-1.5 border border-amber-200 transition-colors cursor-pointer"
                         onClick={() => setShowBarrierModal(true)}
                       >
-                        <span className="material-symbols-outlined text-[18px]">help_outline</span>
+                        <AppIcon name="help_outline" className="w-[18px] h-[18px]" />
                         <span>{lang === "hi" ? "यह नहीं कर पा रहे?" : "Can't do this? What stopped you?"}</span>
                       </button>
                     </div>
@@ -728,7 +764,7 @@ export function FarmerPortal() {
                         src="https://lh3.googleusercontent.com/aida/AEtjO1Us1ru4tW37fvhuqgiHCUO9Og03ODst7uRJaazm98F7MxkyzxJAmeNloGo7ATX1pTB4siz_2t0ajzABRNuD7YnYMJAjNWnBO2dHvDFlnA9ROrOw0vCB32QpFrvNkL49o1I_k7jsfyh6L87xeQrmnMZbBj8Bq15qjGTalzf7jSfVT6qdCHy0GiiyrXn_yu3eUq9GgmJv-6xO1qRwcEfEeekdaczbEV1aghCqx9MqEkoElrLAkTPiIXFGYBA"
                       />
                       <div className="absolute bottom-2 left-2 right-2 bg-black/75 backdrop-blur-sm text-white px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-[16px] text-amber-300">search</span>
+                        <AppIcon name="search" className="w-4 h-4  text-amber-300" />
                         <span>{lang === "hi" ? "पत्ती के निचले हिस्से पर धब्बे देखें" : "Inspect lower collar for spots"}</span>
                       </div>
                     </div>
@@ -759,7 +795,7 @@ export function FarmerPortal() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Step 1 */}
-                  <div className="bg-white rounded-2xl p-6 border border-[#e8e7de] shadow-xs flex flex-col justify-between card-hover">
+                  <div className="bg-white rounded-2xl p-4 sm:p-6 border border-[#e8e7de] shadow-xs flex flex-col justify-between card-hover">
                     <div className="space-y-3">
                       <div className="w-10 h-10 rounded-xl bg-emerald-100 text-primary flex items-center justify-center font-display font-black text-lg">1</div>
                       <div>
@@ -773,13 +809,13 @@ export function FarmerPortal() {
                       </p>
                     </div>
                     <div className="mt-4 pt-3 border-t border-[#ebeae2] flex items-center gap-1.5 text-xs font-semibold text-secondary">
-                      <span className="material-symbols-outlined text-[16px] text-emerald-700">pin_drop</span>
+                      <AppIcon name="pin_drop" className="w-4 h-4  text-emerald-700" />
                       <span>40 paces from sluice</span>
                     </div>
                   </div>
 
                   {/* Step 2 */}
-                  <div className="bg-white rounded-2xl p-6 border border-[#e8e7de] shadow-xs flex flex-col justify-between card-hover">
+                  <div className="bg-white rounded-2xl p-4 sm:p-6 border border-[#e8e7de] shadow-xs flex flex-col justify-between card-hover">
                     <div className="space-y-3">
                       <div className="w-10 h-10 rounded-xl bg-emerald-100 text-primary flex items-center justify-center font-display font-black text-lg">2</div>
                       <div>
@@ -793,13 +829,13 @@ export function FarmerPortal() {
                       </p>
                     </div>
                     <div className="mt-4 pt-3 border-t border-[#ebeae2] flex items-center gap-1.5 text-xs font-semibold text-secondary">
-                      <span className="material-symbols-outlined text-[16px] text-emerald-700">visibility</span>
+                      <AppIcon name="visibility" className="w-4 h-4  text-emerald-700" />
                       <span>Water level leaves</span>
                     </div>
                   </div>
 
                   {/* Step 3 */}
-                  <div className="bg-white rounded-2xl p-6 border-2 border-dashed border-primary/40 bg-emerald-50/30 shadow-xs flex flex-col justify-between card-hover">
+                  <div className="bg-white rounded-2xl p-4 sm:p-6 border-2 border-dashed border-primary/40 bg-emerald-50/30 shadow-xs flex flex-col justify-between card-hover">
                     <div className="space-y-3">
                       <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-display font-black text-lg">3</div>
                       <div>
@@ -817,7 +853,7 @@ export function FarmerPortal() {
                         className="flex-1 py-2 px-3 bg-primary text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 hover:bg-[#163624] transition-colors cursor-pointer"
                         onClick={() => setShowWalkthroughModal(true)}
                       >
-                        <span className="material-symbols-outlined text-[16px]">fact_check</span>
+                        <AppIcon name="fact_check" className="w-4 h-4" />
                         <span>{lang === "hi" ? "दर्ज करें" : "Record Now"}</span>
                       </button>
                     </div>
@@ -826,7 +862,7 @@ export function FarmerPortal() {
               </section>
 
               {/* KVK Call Banner */}
-              <section className="bg-primary text-white rounded-2xl p-6 shadow-md flex flex-col md:flex-row items-center justify-between gap-5 relative overflow-hidden">
+              <section className="bg-primary text-white rounded-2xl p-4 sm:p-6 shadow-md flex flex-col md:flex-row items-center justify-between gap-5 relative overflow-hidden">
                 <div className="flex items-center gap-4 z-10">
                   <div className="relative flex items-center justify-center shrink-0">
                     <span className="ripple-ring absolute w-14 h-14 rounded-full bg-emerald-400/40"></span>
@@ -835,7 +871,7 @@ export function FarmerPortal() {
                       onClick={() => setShowVoiceModal(true)}
                       title="Speak in Hindi/English"
                     >
-                      <span className="material-symbols-outlined text-[24px]">mic</span>
+                      <AppIcon name="mic" className="w-6 h-6" />
                     </button>
                   </div>
                   <div className="space-y-0.5">
@@ -857,7 +893,7 @@ export function FarmerPortal() {
                     className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-charcoal font-bold text-xs shadow-md transition-all cursor-pointer"
                     onClick={() => setShowCallModal(true)}
                   >
-                    <span className="material-symbols-outlined text-[18px]">call</span>
+                    <AppIcon name="call" className="w-[18px] h-[18px]" />
                     <span>{lang === "hi" ? "मुफ्त कॉल करें" : "Free Call Agronomist"}</span>
                   </button>
                 </div>
@@ -888,7 +924,7 @@ export function FarmerPortal() {
 
               {/* Interactive Cadastral Map Simulator */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-[#e8e7de] shadow-sm space-y-4">
+                <div className="lg:col-span-2 bg-white rounded-2xl p-4 sm:p-6 border border-[#e8e7de] shadow-sm space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-secondary uppercase tracking-wider">
                       {lang === "hi" ? "जोन चुनें (क्लिक करें)" : "Interactive Zone Selector (Click a zone)"}
@@ -899,7 +935,7 @@ export function FarmerPortal() {
                   </div>
 
                   {/* SVG Farm Map */}
-                  <div className="relative w-full h-80 bg-emerald-950/5 rounded-2xl border-2 border-dashed border-emerald-800/20 overflow-hidden flex items-center justify-center p-4">
+                  <div className="relative w-full h-auto min-h-[22rem] sm:h-80 bg-emerald-950/5 rounded-2xl border-2 border-dashed border-emerald-800/20 overflow-hidden flex items-center justify-center p-2.5 sm:p-4">
                     {/* Canal Sluice Line */}
                     <div className="absolute top-0 right-1/4 bottom-0 w-8 bg-sky-200/60 dark:bg-sky-900/40 border-x border-sky-400/40 flex items-center justify-center">
                       <span className="text-[9px] font-bold text-sky-800 dark:text-sky-300 rotate-90 tracking-widest uppercase">
@@ -908,7 +944,7 @@ export function FarmerPortal() {
                     </div>
 
                     {/* Zone Cards */}
-                    <div className="grid grid-cols-3 gap-4 w-full h-full z-10">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 w-full h-full z-10">
                       {/* Zone A */}
                       <button
                         className={`zone-card rounded-xl p-4 flex flex-col justify-between text-left transition-all cursor-pointer ${
@@ -925,7 +961,7 @@ export function FarmerPortal() {
                         </div>
                         <div className="flex items-center justify-between text-xs font-semibold text-emerald-800">
                           <span>Healthy • 88%</span>
-                          <span className="material-symbols-outlined text-[18px]">verified</span>
+                          <AppIcon name="verified" className="w-[18px] h-[18px]" />
                         </div>
                       </button>
 
@@ -947,7 +983,7 @@ export function FarmerPortal() {
                         </div>
                         <div className="flex items-center justify-between text-xs font-bold text-amber-900">
                           <span>Moisture Trap</span>
-                          <span className="material-symbols-outlined text-[18px]">warning</span>
+                          <AppIcon name="warning" className="w-[18px] h-[18px]" />
                         </div>
                       </button>
 
@@ -967,20 +1003,20 @@ export function FarmerPortal() {
                         </div>
                         <div className="flex items-center justify-between text-xs font-semibold text-emerald-800">
                           <span>Optimal • 85%</span>
-                          <span className="material-symbols-outlined text-[18px]">verified</span>
+                          <AppIcon name="verified" className="w-[18px] h-[18px]" />
                         </div>
                       </button>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs text-secondary pt-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-secondary pt-2 gap-1">
                     <span>📍 Lat: 23.3441° N, Lon: 85.3096° E (Namkum, Ranchi)</span>
                     <span>Soil: Clay-loam alluvial with adequate nitrogen</span>
                   </div>
                 </div>
 
                 {/* Zone Detailed Breakdown Panel */}
-                <div className="bg-white rounded-2xl p-6 border border-[#e8e7de] shadow-sm flex flex-col justify-between">
+                <div className="bg-white rounded-2xl p-4 sm:p-6 border border-[#e8e7de] shadow-sm flex flex-col justify-between">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="px-3 py-1 bg-amber-100 text-amber-900 rounded-full font-bold text-xs">
@@ -1022,7 +1058,7 @@ export function FarmerPortal() {
                       className="w-full py-3 rounded-xl bg-primary hover:bg-[#163624] text-white font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-sm"
                       onClick={() => setShowWalkthroughModal(true)}
                     >
-                      <span className="material-symbols-outlined text-[18px]">search</span>
+                      <AppIcon name="search" className="w-[18px] h-[18px]" />
                       <span>{lang === "hi" ? "इस जोन की जांच शुरू करें" : "Start Inspection for this Zone"}</span>
                     </button>
                   </div>
@@ -1052,10 +1088,10 @@ export function FarmerPortal() {
               </div>
 
               {/* Task Item 1 */}
-              <div className="bg-white rounded-2xl p-6 border-2 border-amber-500/40 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 card-hover">
+              <div className="bg-white rounded-2xl p-4 sm:p-6 border-2 border-amber-500/40 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 card-hover">
                 <div className="flex items-start gap-4 flex-1">
                   <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-[26px]">pest_control</span>
+                    <AppIcon name="pest_control" className="w-6 h-6" />
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -1083,17 +1119,17 @@ export function FarmerPortal() {
                     className="px-5 py-2.5 bg-primary hover:bg-[#163624] text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 cursor-pointer"
                     onClick={() => setShowWalkthroughModal(true)}
                   >
-                    <span className="material-symbols-outlined text-[16px]">play_circle</span>
+                    <AppIcon name="play_circle" className="w-4 h-4" />
                     <span>Execute Task</span>
                   </button>
                 </div>
               </div>
 
               {/* Task Item 2 */}
-              <div className="bg-white rounded-2xl p-6 border border-[#e8e7de] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 opacity-95">
+              <div className="bg-white rounded-2xl p-4 sm:p-6 border border-[#e8e7de] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 opacity-95">
                 <div className="flex items-start gap-4 flex-1">
                   <div className="w-12 h-12 rounded-xl bg-sky-100 text-sky-800 flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-[26px]">water_drop</span>
+                    <AppIcon name="water_drop" className="w-6 h-6" />
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -1114,10 +1150,10 @@ export function FarmerPortal() {
               </div>
 
               {/* Task Item 3 */}
-              <div className="bg-white rounded-2xl p-6 border border-[#e8e7de] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 opacity-80">
+              <div className="bg-white rounded-2xl p-4 sm:p-6 border border-[#e8e7de] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 opacity-80">
                 <div className="flex items-start gap-4 flex-1">
                   <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-[26px]">done_all</span>
+                    <AppIcon name="done_all" className="w-6 h-6" />
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
@@ -1157,7 +1193,7 @@ export function FarmerPortal() {
               </div>
 
               {/* 7-Stage KisanLoop Diagram */}
-              <div className="bg-white rounded-2xl p-6 border border-[#e8e7de] shadow-sm space-y-4">
+              <div className="bg-white rounded-2xl p-4 sm:p-6 border border-[#e8e7de] shadow-sm space-y-4">
                 <h4 className="text-xs font-bold text-secondary uppercase tracking-wider">
                   How Every Recommendation Evolves into Farm Wisdom
                 </h4>
@@ -1201,7 +1237,7 @@ export function FarmerPortal() {
               </div>
 
               {/* Chronological Audit Trail */}
-              <div className="bg-white rounded-2xl p-6 border border-[#e8e7de] shadow-sm space-y-5">
+              <div className="bg-white rounded-2xl p-4 sm:p-6 border border-[#e8e7de] shadow-sm space-y-5">
                 <div className="flex items-center justify-between">
                   <h4 className="text-base font-bold text-charcoal">Real Field Outcomes & Savings Log</h4>
                   <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full">
@@ -1268,7 +1304,7 @@ export function FarmerPortal() {
                 </span>
               </div>
 
-              <div className="bg-white rounded-2xl p-6 border-2 border-emerald-800/20 shadow-sm space-y-5">
+              <div className="bg-white rounded-2xl p-4 sm:p-6 border-2 border-emerald-800/20 shadow-sm space-y-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#ebeae2]">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-display font-bold text-lg">
@@ -1302,21 +1338,21 @@ export function FarmerPortal() {
                     className="px-5 py-3 rounded-xl bg-primary hover:bg-[#163624] text-white font-bold text-xs flex items-center gap-2 shadow-sm cursor-pointer"
                     onClick={() => setShowCallModal(true)}
                   >
-                    <span className="material-symbols-outlined text-[18px]">call</span>
+                    <AppIcon name="call" className="w-[18px] h-[18px]" />
                     <span>1-Tap Audio Call (निःशुल्क फोन करें)</span>
                   </button>
                   <button
                     className="px-4 py-3 rounded-xl bg-[#F6F5EF] hover:bg-emerald-100 text-primary font-bold text-xs border border-[#e8e7de] flex items-center gap-1.5 transition-colors cursor-pointer"
                     onClick={() => setShowWalkthroughModal(true)}
                   >
-                    <span className="material-symbols-outlined text-[18px]">add_a_photo</span>
+                    <AppIcon name="add_a_photo" className="w-[18px] h-[18px]" />
                     <span>Attach Leaf Photo for Doctor</span>
                   </button>
                   <button
                     className="px-4 py-3 rounded-xl bg-[#F6F5EF] hover:bg-slate-200 text-charcoal font-bold text-xs border border-[#e8e7de] flex items-center gap-1.5 transition-colors cursor-pointer"
                     onClick={() => alert("SMS summary dispatched to Dr. Patel at KVK Ranchi desk.")}
                   >
-                    <span className="material-symbols-outlined text-[18px]">sms</span>
+                    <AppIcon name="sms" className="w-[18px] h-[18px]" />
                     <span>Send SMS Summary</span>
                   </button>
                 </div>
@@ -1345,7 +1381,7 @@ export function FarmerPortal() {
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Profile Card */}
-                <div className="bg-white rounded-2xl p-6 border border-[#e8e7de] shadow-sm flex flex-col items-center text-center space-y-4">
+                <div className="bg-white rounded-2xl p-4 sm:p-6 border border-[#e8e7de] shadow-sm flex flex-col items-center text-center space-y-4">
                   <div className="relative">
                     <img
                       alt={farmerName}
@@ -1380,7 +1416,7 @@ export function FarmerPortal() {
                 </div>
 
                 {/* Edit Form */}
-                <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-[#e8e7de] shadow-sm space-y-5">
+                <div className="lg:col-span-2 bg-white rounded-2xl p-4 sm:p-6 border border-[#e8e7de] shadow-sm space-y-5">
                   <h4 className="text-base font-bold text-charcoal border-b border-[#ebeae2] pb-3">
                     Edit Details (विवरण संपादित करें)
                   </h4>
@@ -1459,27 +1495,95 @@ export function FarmerPortal() {
         </main>
 
         {/* Footer */}
-        <footer className="py-6 px-10 text-center border-t border-[#ebeae2] mt-auto">
+        <footer className="py-6 px-4 sm:px-10 text-center border-t border-[#ebeae2] mt-auto">
           <p className="text-xs text-secondary font-medium flex items-center justify-center gap-1.5">
-            <span className="material-symbols-outlined text-[16px] text-emerald-700">eco</span>
+            <AppIcon name="eco" className="w-4 h-4  text-emerald-700" />
             <span>KisanLoop Master • Action & Outcome Layer for Sustainable Smallholder Agriculture</span>
           </p>
         </footer>
       </div>
 
       {/* Floating Voice Assistant Button */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-20 right-4 lg:bottom-6 lg:right-6 z-40">
         <button
-          className="relative flex items-center gap-2.5 px-5 py-3.5 rounded-full bg-primary hover:bg-[#163624] text-white shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer group"
+          className="relative flex items-center gap-2 px-3.5 sm:px-5 py-3 sm:py-3.5 rounded-full bg-primary hover:bg-[#163624] text-white shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer group"
           onClick={() => setShowVoiceModal(true)}
         >
           <span className="ripple-ring absolute inset-0 rounded-full bg-emerald-400/30"></span>
-          <span className="material-symbols-outlined text-[22px] group-hover:rotate-12 transition-transform">mic</span>
+          <AppIcon name="mic" className="w-5 h-5  sm:text-[22px] group-hover:rotate-12 transition-transform" />
           <span className="font-display font-bold text-xs tracking-wide">
             {lang === "hi" ? "बोलकर पूछें" : "Ask KisanLoop"}
           </span>
         </button>
       </div>
+
+      {/* ==================== MOBILE BOTTOM APP DOCK ==================== */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#ebeae2] px-2 py-1.5 flex items-center justify-around shadow-lg">
+        <button
+          type="button"
+          onClick={() => setCurrentTab("today")}
+          className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
+            currentTab === "today"
+              ? "text-[#214E34] bg-emerald-50"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <AppIcon name="cottage" className="w-5 h-5" />
+          <span>{lang === "hi" ? "खेत" : "Today"}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setCurrentTab("farm")}
+          className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
+            currentTab === "farm"
+              ? "text-[#214E34] bg-emerald-50"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <AppIcon name="map" className="w-5 h-5" />
+          <span>{lang === "hi" ? "नक्शा" : "Map"}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setCurrentTab("actions")}
+          className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
+            currentTab === "actions"
+              ? "text-[#214E34] bg-emerald-50"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <AppIcon name="assignment_turned_in" className="w-5 h-5" />
+          <span>{lang === "hi" ? "कार्य" : "Tasks"}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setCurrentTab("expert")}
+          className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
+            currentTab === "expert"
+              ? "text-[#214E34] bg-emerald-50"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <AppIcon name="support_agent" className="w-5 h-5" />
+          <span>{lang === "hi" ? "सलाहकार" : "Expert"}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setCurrentTab("profile")}
+          className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
+            currentTab === "profile"
+              ? "text-[#214E34] bg-emerald-50"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <AppIcon name="account_circle" className="w-5 h-5" />
+          <span>{lang === "hi" ? "प्रोफ़ाइल" : "Profile"}</span>
+        </button>
+      </nav>
 
       {/* =============================================================== */}
       {/* MODALS & DRAWERS                                                */}
@@ -1492,14 +1596,14 @@ export function FarmerPortal() {
             <div className="space-y-5">
               <div className="flex items-center justify-between pb-3 border-b border-[#ebeae2]">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary text-[22px]">psychology</span>
+                  <AppIcon name="psychology" className="w-5 h-5 text-primary" />
                   <h3 className="font-display font-bold text-lg text-charcoal">Decision Intelligence Trace</h3>
                 </div>
                 <button
                   className="p-1.5 rounded-lg hover:bg-[#F6F5EF] text-secondary cursor-pointer"
                   onClick={() => setShowWhyDrawer(false)}
                 >
-                  <span className="material-symbols-outlined text-[20px]">close</span>
+                  <AppIcon name="close" className="w-5 h-5" />
                 </button>
               </div>
 
@@ -1551,11 +1655,11 @@ export function FarmerPortal() {
 
       {/* 2. CAN'T DO THIS? / WHAT STOPPED YOU? (Barrier Modal) */}
       {showBarrierModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white max-w-lg w-full rounded-2xl p-6 shadow-2xl border border-[#e8e7de] space-y-5">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white max-w-lg w-full rounded-2xl p-4 sm:p-6 shadow-2xl border border-[#e8e7de] space-y-4 sm:space-y-5 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-[#ebeae2]">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-amber-600 text-[24px]">troubleshoot</span>
+                <AppIcon name="troubleshoot" className="w-6 h-6 text-amber-600" />
                 <div>
                   <h3 className="font-display font-bold text-lg text-charcoal">
                     {lang === "hi" ? "क्या रुकावट आई?" : "What stopped you?"}
@@ -1567,11 +1671,11 @@ export function FarmerPortal() {
                 className="p-1 rounded-lg hover:bg-[#F6F5EF] text-secondary cursor-pointer"
                 onClick={() => setShowBarrierModal(false)}
               >
-                <span className="material-symbols-outlined text-[20px]">close</span>
+                <AppIcon name="close" className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
               <button
                 className="p-3 rounded-xl border border-[#e8e7de] bg-[#F6F5EF] hover:bg-amber-50 hover:border-amber-400 text-left transition-colors cursor-pointer"
                 onClick={() => handleRecordBarrier("cost")}
@@ -1642,8 +1746,8 @@ export function FarmerPortal() {
 
       {/* 3. ACTION WALKTHROUGH & OUTCOME RECORDING MODAL */}
       {showWalkthroughModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white max-w-xl w-full rounded-2xl p-6 shadow-2xl border border-[#e8e7de] space-y-6 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white max-w-xl w-full rounded-2xl p-4 sm:p-6 shadow-2xl border border-[#e8e7de] space-y-5 sm:space-y-6 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-[#ebeae2]">
               <div>
                 <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded uppercase">
@@ -1655,7 +1759,7 @@ export function FarmerPortal() {
                 className="p-1 rounded-lg hover:bg-[#F6F5EF] text-secondary cursor-pointer"
                 onClick={() => setShowWalkthroughModal(false)}
               >
-                <span className="material-symbols-outlined text-[22px]">close</span>
+                <AppIcon name="close" className="w-5 h-5" />
               </button>
             </div>
 
@@ -1693,7 +1797,7 @@ export function FarmerPortal() {
               <label className="text-xs font-bold text-secondary uppercase block">
                 What did you find? (खेत में क्या दिखा?)
               </label>
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5">
                 <button
                   type="button"
                   className={`p-3 rounded-xl text-center font-bold text-xs transition-all cursor-pointer ${
@@ -1734,9 +1838,9 @@ export function FarmerPortal() {
             </div>
 
             {/* Evidence Attachment */}
-            <div className="p-3.5 bg-[#F6F5EF] rounded-xl border border-[#e8e7de] flex items-center justify-between gap-3">
+            <div className="p-3 sm:p-3.5 bg-[#F6F5EF] rounded-xl border border-[#e8e7de] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-[22px]">photo_camera</span>
+                <AppIcon name="photo_camera" className="w-5 h-5 text-primary" />
                 <div className="text-xs">
                   <span className="font-bold text-charcoal block">Attach Evidence (Optional)</span>
                   <span className={`text-secondary ${evidenceAttached ? "text-emerald-700 font-bold" : ""}`}>
@@ -1745,7 +1849,7 @@ export function FarmerPortal() {
                 </div>
               </div>
               <button
-                className="px-3 py-1.5 bg-white border border-[#e8e7de] hover:bg-emerald-50 text-primary font-bold text-xs rounded-lg cursor-pointer"
+                className="px-3 py-1.5 bg-white border border-[#e8e7de] hover:bg-emerald-50 text-primary font-bold text-xs rounded-lg cursor-pointer shrink-0"
                 onClick={() => setEvidenceAttached(true)}
               >
                 📷 Simulate Snap
@@ -1773,7 +1877,7 @@ export function FarmerPortal() {
                 className="px-6 py-2.5 rounded-xl bg-primary hover:bg-[#163624] text-white font-bold text-xs shadow-md cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
                 onClick={submitWalkthroughOutcome}
               >
-                {processingAction && <span className="material-symbols-outlined text-[16px] animate-spin">sync</span>}
+                {processingAction && <AppIcon name="sync" className="w-4 h-4  animate-spin" />}
                 <span>Save & Complete Loop</span>
               </button>
             </div>
@@ -1783,8 +1887,8 @@ export function FarmerPortal() {
 
       {/* 4. VOICE ASSISTANT MODAL */}
       {showVoiceModal && (
-        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white max-w-md w-full rounded-3xl p-7 shadow-2xl border border-[#e8e7de] text-center space-y-6">
+        <div className="fixed inset-0 z-50 bg-black/65 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white max-w-md w-full rounded-3xl p-5 sm:p-7 shadow-2xl border border-[#e8e7de] text-center space-y-5 sm:space-y-6 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center">
               <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full">
                 KisanLoop Voice AI
@@ -1793,7 +1897,7 @@ export function FarmerPortal() {
                 className="p-1 text-secondary hover:text-charcoal rounded-lg cursor-pointer"
                 onClick={() => setShowVoiceModal(false)}
               >
-                <span className="material-symbols-outlined text-[20px]">close</span>
+                <AppIcon name="close" className="w-5 h-5" />
               </button>
             </div>
 
@@ -1807,7 +1911,7 @@ export function FarmerPortal() {
                 }`}
                 onClick={toggleVoiceRecording}
               >
-                <span className="material-symbols-outlined text-[36px]">mic</span>
+                <AppIcon name="mic" className="w-9 h-9" />
               </button>
             </div>
 
@@ -1872,19 +1976,19 @@ export function FarmerPortal() {
                 className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
                 onClick={() => alert("Microphone muted")}
               >
-                <span className="material-symbols-outlined text-[20px]">mic_off</span>
+                <AppIcon name="mic_off" className="w-5 h-5" />
               </button>
               <button
                 className="w-16 h-16 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 cursor-pointer"
                 onClick={() => setShowCallModal(false)}
               >
-                <span className="material-symbols-outlined text-[28px]">call_end</span>
+                <AppIcon name="call_end" className="w-7 h-7" />
               </button>
               <button
                 className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
                 onClick={() => alert("Speaker mode active")}
               >
-                <span className="material-symbols-outlined text-[20px]">volume_up</span>
+                <AppIcon name="volume_up" className="w-5 h-5" />
               </button>
             </div>
           </div>
