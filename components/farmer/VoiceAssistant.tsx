@@ -114,7 +114,7 @@ export function VoiceAssistant() {
         </div>
 
         <span className="text-[11px] px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 dark:text-emerald-300 font-bold">
-          Gemini 2.5 Flash • Bilingual
+          Gemini 3.5 Flash • Bilingual
         </span>
       </div>
 

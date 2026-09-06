@@ -2,6 +2,9 @@ import { weatherProvider } from "../providers/weather";
 import { soilProvider } from "../providers/soil";
 import { satelliteProvider } from "../providers/satellite";
 import { mockDb } from "../db/mock-storage";
+import { db } from "../db";
+import { farms, farmStates, crops } from "../db/schema";
+import { eq } from "drizzle-orm";
 
 export interface FarmStateDTO {
   farmId: string;
@@ -22,12 +25,39 @@ export interface FarmStateDTO {
 
 export class FarmStateService {
   async getFarmState(farmId: string): Promise<FarmStateDTO> {
-    const farm = mockDb.farms.findById(farmId);
-    if (!farm) throw new Error("Farm not found");
+    let farmLat = 23.3441;
+    let farmLon = 85.3096;
+    let cropName = "Paddy (IR-64)";
+    let cropStage = "Vegetative";
 
-    const weather = await weatherProvider.getWeatherForecast(farm.latitude, farm.longitude);
-    const soil = await soilProvider.getSoilData(farm.latitude, farm.longitude);
-    const satellite = await satelliteProvider.getVegetationIndex(farm.latitude, farm.longitude);
+    if (db) {
+      try {
+        const found = await db.select().from(farms).where(eq(farms.id, farmId)).limit(1);
+        if (found.length > 0) {
+          farmLat = found[0].latitude;
+          farmLon = found[0].longitude;
+        } else {
+          // Fallback to first farm in DB
+          const anyFarm = await db.select().from(farms).limit(1);
+          if (anyFarm.length > 0) {
+            farmLat = anyFarm[0].latitude;
+            farmLon = anyFarm[0].longitude;
+          }
+        }
+      } catch (err) {
+        console.warn("DB farm lookup fallback to mock:", err);
+      }
+    } else {
+      const mockFarm = mockDb.farms.findById(farmId) || mockDb.farms.findMany()[0];
+      if (mockFarm) {
+        farmLat = mockFarm.latitude;
+        farmLon = mockFarm.longitude;
+      }
+    }
+
+    const weather = await weatherProvider.getWeatherForecast(farmLat, farmLon);
+    const soil = await soilProvider.getSoilData(farmLat, farmLon);
+    const satellite = await satelliteProvider.getVegetationIndex(farmLat, farmLon);
 
     // Evaluate risks
     const rainRisk = weather.isRainExpected && weather.rainProbabilityPercent > 70 ? "high" : "low";
@@ -41,8 +71,8 @@ export class FarmStateService {
 
     const state: FarmStateDTO = {
       farmId,
-      cropName: "Paddy (IR-64)",
-      cropStage: "Vegetative",
+      cropName,
+      cropStage,
       soilMoisture,
       rainRisk,
       heatRisk: "low",
@@ -56,9 +86,44 @@ export class FarmStateService {
       updatedAt: new Date(),
     };
 
+    if (db) {
+      try {
+        await db
+          .insert(farmStates)
+          .values({
+            id: `fst_${farmId}`,
+            farmId,
+            cropName,
+            cropStage,
+            soilMoisture,
+            rainRisk,
+            heatRisk: "low",
+            pestRisk: "moderate",
+            diseaseRisk,
+            overallRisk,
+            summary,
+            updatedAt: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: farmStates.id,
+            set: {
+              soilMoisture,
+              rainRisk,
+              diseaseRisk,
+              overallRisk,
+              summary,
+              updatedAt: new Date(),
+            },
+          });
+      } catch (dbErr) {
+        console.warn("DB farmStates upsert fallback:", dbErr);
+      }
+    }
+
     mockDb.farmStates.update(farmId, state);
     return state;
   }
 }
 
 export const farmStateService = new FarmStateService();
+

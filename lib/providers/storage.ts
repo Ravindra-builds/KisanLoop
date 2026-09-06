@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { StorageProvider } from "./types";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
 export class LocalStorageAdapter implements StorageProvider {
   private uploadsDir: string;
@@ -38,9 +39,7 @@ export class LocalStorageAdapter implements StorageProvider {
 }
 
 export class R2StorageAdapter implements StorageProvider {
-  private accountId: string;
-  private accessKeyId: string;
-  private secretAccessKey: string;
+  private s3: S3Client;
   private bucket: string;
   private endpoint?: string;
   private fallback: LocalStorageAdapter;
@@ -52,13 +51,19 @@ export class R2StorageAdapter implements StorageProvider {
     bucket: string;
     endpoint?: string;
   }) {
-    this.accountId = config.accountId;
-    this.accessKeyId = config.accessKeyId;
-    this.secretAccessKey = config.secretAccessKey;
     this.bucket = config.bucket;
     this.endpoint =
       config.endpoint ||
-      (this.accountId ? `https://${this.accountId}.r2.cloudflarestorage.com` : undefined);
+      (config.accountId ? `https://${config.accountId}.r2.cloudflarestorage.com` : undefined);
+
+    this.s3 = new S3Client({
+      region: "auto",
+      endpoint: this.endpoint,
+      credentials: {
+        accessKeyId: config.accessKeyId,
+        secretAccessKey: config.secretAccessKey,
+      },
+    });
     this.fallback = new LocalStorageAdapter();
   }
 
@@ -71,29 +76,26 @@ export class R2StorageAdapter implements StorageProvider {
     const sanitizedName = filename.replace(/[^a-zA-Z0-9.-]/g, "_");
     const key = `kisanloop/${timestamp}-${sanitizedName}`;
 
-    if (this.endpoint && this.bucket) {
-      try {
-        const uploadUrl = `${this.endpoint}/${this.bucket}/${key}`;
-        const res = await fetch(uploadUrl, {
-          method: "PUT",
-          headers: {
-            "Content-Type": mimeType,
-          },
-          body: fileBuffer as any,
-        });
-        if (res.ok) {
-          return {
-            url: uploadUrl,
-            key,
-            size: fileBuffer.length,
-          };
-        }
-      } catch (err) {
-        console.warn("R2 storage upload direct attempt failed, saving to local fallback:", err);
-      }
-    }
+    try {
+      await this.s3.send(
+        new PutObjectCommand({
+          Bucket: this.bucket,
+          Key: key,
+          Body: fileBuffer,
+          ContentType: mimeType,
+        })
+      );
 
-    return this.fallback.uploadFile(fileBuffer, filename, mimeType);
+      const url = this.endpoint ? `${this.endpoint}/${this.bucket}/${key}` : `/uploads/${key}`;
+      return {
+        url,
+        key,
+        size: fileBuffer.length,
+      };
+    } catch (err) {
+      console.warn("R2 S3 upload failed, saving to local fallback:", err);
+      return this.fallback.uploadFile(fileBuffer, filename, mimeType);
+    }
   }
 
   async getFileUrl(key: string): Promise<string> {
@@ -111,7 +113,7 @@ const r2Secret = process.env.R2_SECRET_ACCESS_KEY;
 const r2Bucket = process.env.R2_BUCKET;
 
 export const storageProvider: StorageProvider =
-  !isExplicitDemo && (r2Bucket || r2AccountId)
+  !isExplicitDemo && r2Bucket && r2AccessKey && r2Secret
     ? new R2StorageAdapter({
         accountId: r2AccountId || "",
         accessKeyId: r2AccessKey || "",
@@ -120,3 +122,4 @@ export const storageProvider: StorageProvider =
         endpoint: process.env.R2_ENDPOINT,
       })
     : new LocalStorageAdapter();
+

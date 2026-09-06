@@ -2,7 +2,18 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import AppIcon from "@/components/shared/AppIcon";
+import { ProfileSetupModal } from "@/components/shared/ProfileSetupModal";
+
+const AgriculturalMap = dynamic(() => import("@/components/dashboard/AgriculturalMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[420px] w-full rounded-2xl bg-muted/40 border flex items-center justify-center text-xs text-muted-foreground animate-pulse">
+      Loading Agricultural GIS Map...
+    </div>
+  ),
+});
 
 interface BlockData {
   name: string;
@@ -28,6 +39,29 @@ export function GovernmentDashboard() {
   const [selectedBlock, setSelectedBlock] = useState<BlockData>(BLOCKS_DATA[0]);
   const [mandateTarget, setMandateTarget] = useState(70);
   const [currentAAR, setCurrentAAR] = useState(64.2);
+
+  // Profile & Role Switcher
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [officialName, setOfficialName] = useState("Dr. S. K. Tirkey");
+  const [officialDesignation, setOfficialDesignation] = useState("Joint Director Agriculture");
+  const [officialDepartment, setOfficialDepartment] = useState("Ranchi District Agriculture Office");
+  const [userRole, setUserRole] = useState<"FARMER" | "EXPERT" | "GOVT" | "ADMIN">("GOVT");
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && res.data?.user) {
+          const u = res.data.user;
+          if (u.name && u.name !== "Farmer") setOfficialName(u.name);
+          if (u.role) setUserRole(u.role);
+          if (res.data.isProfileComplete === false) {
+            setShowProfileModal(true);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Modals & Popups
   const [showExportModal, setShowExportModal] = useState(false);
@@ -215,17 +249,36 @@ export function GovernmentDashboard() {
 
           <div className="flex items-center gap-2.5 px-2 py-1">
             <div className="w-8 h-8 rounded-lg bg-[#05371f] text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
-              ST
+              {officialName
+                .split(" ")
+                .filter(Boolean)
+                .map((n) => n[0])
+                .slice(0, 2)
+                .join("")
+                .toUpperCase() || "GO"}
             </div>
             <div className="flex flex-col min-w-0 flex-1">
               <span className="text-xs font-bold text-[#141e17] dark:text-white truncate">
-                Dr. S. K. Tirkey
+                {officialName}
               </span>
               <span className="text-[10px] text-[#4f6351] dark:text-zinc-400 truncate">
-                Joint Director Agriculture
+                {officialDesignation}
               </span>
             </div>
           </div>
+
+          {/* Switch Role / Edit Profile Button */}
+          <button
+            type="button"
+            onClick={() => setShowProfileModal(true)}
+            className="w-full flex items-center justify-between px-3 py-2 bg-[#ebf7eb] dark:bg-emerald-950/40 hover:bg-[#d8edd8] text-[#05371f] dark:text-emerald-300 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-[#d2ded5] dark:border-emerald-800"
+          >
+            <span className="flex items-center gap-1.5">
+              <AppIcon name="manage_accounts" className="w-4 h-4" />
+              <span>Role: {userRole}</span>
+            </span>
+            <span className="text-[10px] underline font-normal">Switch</span>
+          </button>
 
           {/* Sidebar Universal Logout Button */}
           <button
@@ -278,6 +331,18 @@ export function GovernmentDashboard() {
               <AppIcon name="picture_as_pdf" className="w-4 h-4" />
               <span className="hidden sm:inline">Export District Brief</span>
               <span className="sm:hidden">Brief</span>
+            </button>
+
+            {/* Role Switcher Badge */}
+            <button
+              type="button"
+              onClick={() => setShowProfileModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 sm:py-2 bg-[#ebf7eb] dark:bg-emerald-950/40 hover:bg-[#d8edd8] text-[#05371f] dark:text-emerald-300 rounded-xl border border-[#d2ded5] dark:border-emerald-800 text-xs font-bold shadow-xs transition cursor-pointer"
+              title="Change Role / Setup Profile"
+            >
+              <AppIcon name="manage_accounts" className="w-4 h-4" />
+              <span>Role: {userRole}</span>
+              <span className="text-[10px] underline font-normal">(Switch)</span>
             </button>
 
             {/* Quick Header Logout Button */}
@@ -668,37 +733,9 @@ export function GovernmentDashboard() {
                 </div>
               </div>
 
-              {/* Simulated SVG Cadastral Map */}
-              <div className="h-72 rounded-2xl bg-[#eef4ee] dark:bg-zinc-900 border border-[#d2ded5] dark:border-white/10 relative overflow-hidden flex items-center justify-center">
-                <svg className="w-full h-full" viewBox="0 0 800 320">
-                  {/* Background grid */}
-                  <pattern id="govGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#d2ded5" strokeWidth="0.5" opacity="0.4" />
-                  </pattern>
-                  <rect width="800" height="320" fill="url(#govGrid)" />
-
-                  {/* Parcels */}
-                  <path d="M120 40 L280 30 L320 180 L140 190 Z" fill="#d1e7d1" stroke="#214e34" strokeWidth="2" />
-                  <path d="M280 30 L520 20 L560 170 L320 180 Z" fill="#ffdad6" stroke="#ba1a1a" strokeWidth="2" />
-                  <path d="M320 180 L560 170 L520 290 L290 280 Z" fill="#ffdcc3" stroke="#c2410c" strokeWidth="2" />
-                  <path d="M140 190 L320 180 L290 280 L110 270 Z" fill="#d1e7d1" stroke="#214e34" strokeWidth="2" />
-                  <path d="M520 20 L720 10 L750 160 L560 170 Z" fill="#d1e7d1" stroke="#214e34" strokeWidth="2" />
-
-                  <text x="180" y="110" fontSize="13" fontWeight="bold" fill="#214e34">Kanke (Safe)</text>
-                  <text x="390" y="90" fontSize="14" fontWeight="black" fill="#ba1a1a">Namkum (Blast Hotspot - 68%)</text>
-                  <text x="370" y="240" fontSize="13" fontWeight="bold" fill="#c2410c">Ratu (Attention)</text>
-                  <text x="160" y="245" fontSize="13" fontWeight="bold" fill="#214e34">Ormanjhi (76.8% AAR)</text>
-                  <text x="610" y="90" fontSize="13" fontWeight="bold" fill="#214e34">Bero (Saline)</text>
-
-                  {/* Pulsing Hotspot Marker */}
-                  <circle cx="430" cy="110" r="14" fill="#ba1a1a" className="animate-ping" opacity="0.5" />
-                  <circle cx="430" cy="110" r="7" fill="#ba1a1a" />
-                </svg>
-
-                <div className="absolute bottom-3 left-3 bg-white/90 dark:bg-zinc-900/90 backdrop-blur px-3 py-1.5 rounded-xl border text-[11px] font-bold text-[#05371f] dark:text-white flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
-                  <span>Active Selection: {selectedBlock.name} ({selectedBlock.totalPlots} monitored parcels)</span>
-                </div>
+              {/* Interactive Agricultural GIS Map */}
+              <div className="w-full">
+                <AgriculturalMap />
               </div>
 
               {/* Block Statistics Grid */}
@@ -867,6 +904,23 @@ export function GovernmentDashboard() {
           </div>
         </div>
       )}
+
+      {/* Profile Setup / Role Switcher Modal */}
+      <ProfileSetupModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        initialData={{
+          name: officialName,
+          role: userRole,
+          designation: officialDesignation,
+          department: officialDepartment,
+        }}
+        onSaved={(data) => {
+          if (data?.user?.name) setOfficialName(data.user.name);
+          if (data?.user?.role) setUserRole(data.user.role);
+          if (data?.user?.designation) setOfficialDesignation(data.user.designation);
+        }}
+      />
     </div>
   );
 }

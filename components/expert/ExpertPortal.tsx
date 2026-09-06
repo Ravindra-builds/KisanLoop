@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import AppIcon from "@/components/shared/AppIcon";
+import { ProfileSetupModal } from "@/components/shared/ProfileSetupModal";
 
 interface CaseItem {
   id: string;
@@ -135,6 +136,29 @@ export function ExpertPortal() {
   const [showAudioRecorderModal, setShowAudioRecorderModal] = useState(false);
   const [isRecordingAudio, setIsRecordingAudio] = useState(false);
   const [audioRecorded, setAudioRecorded] = useState(false);
+
+  // Profile & Role State
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [expertName, setExpertName] = useState("Dr. K. Patel");
+  const [expertDesignation, setExpertDesignation] = useState("KVK Pathologist");
+  const [expertDepartment, setExpertDepartment] = useState("KVK Ranchi Pathology");
+  const [userRole, setUserRole] = useState<"FARMER" | "EXPERT" | "GOVT" | "ADMIN">("EXPERT");
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && res.data?.user) {
+          const u = res.data.user;
+          if (u.name && u.name !== "Farmer") setExpertName(u.name);
+          if (u.role) setUserRole(u.role);
+          if (res.data.isProfileComplete === false) {
+            setShowProfileModal(true);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const triggerToast = (title: string, message: string, icon = "check_circle") => {
     setToast({ title, message, icon });
@@ -326,18 +350,30 @@ export function ExpertPortal() {
             {/* ICAR Authenticated Doctor Info */}
             <div className="flex items-center gap-2.5 pl-3 border-l border-[#eaf0ed] dark:border-white/10">
               <div className="hidden sm:flex flex-col text-right">
-                <span className="text-xs font-bold text-[#111814] dark:text-white">Dr. K. Patel</span>
+                <span className="text-xs font-bold text-[#111814] dark:text-white">{expertName}</span>
                 <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold flex items-center justify-end gap-0.5">
                   <AppIcon name="verified" className="w-3 h-3" />
-                  KVK Ranchi Pathology
+                  {expertDepartment}
                 </span>
               </div>
               <img
                 src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=120&q=80"
-                alt="Dr. Patel"
+                alt={expertName}
                 className="w-9 h-9 rounded-full object-cover border border-[#214e34] shadow-xs"
               />
             </div>
+
+            {/* Role Switcher Badge */}
+            <button
+              type="button"
+              onClick={() => setShowProfileModal(true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-[#eaf0ed] dark:bg-zinc-800 hover:bg-[#dce6dc] text-[#214e34] dark:text-emerald-300 rounded-xl border border-[#dce6dc] dark:border-white/10 text-xs font-bold shadow-xs transition cursor-pointer"
+              title="Change Role / Setup Profile"
+            >
+              <AppIcon name="manage_accounts" className="w-4 h-4" />
+              <span>Role: {userRole}</span>
+              <span className="text-[10px] underline font-normal">(Switch)</span>
+            </button>
 
             {/* Dedicated Logout Button */}
             <button
@@ -1084,6 +1120,23 @@ export function ExpertPortal() {
           </div>
         </div>
       )}
+
+      {/* Profile Setup / Role Switcher Modal */}
+      <ProfileSetupModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        initialData={{
+          name: expertName,
+          role: userRole,
+          designation: expertDesignation,
+          department: expertDepartment,
+        }}
+        onSaved={(data) => {
+          if (data?.user?.name) setExpertName(data.user.name);
+          if (data?.user?.role) setUserRole(data.user.role);
+          if (data?.user?.designation) setExpertDesignation(data.user.designation);
+        }}
+      />
     </div>
   );
 }

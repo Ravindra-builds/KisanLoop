@@ -2,13 +2,40 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+import { useClerk } from "@clerk/nextjs";
 import AppIcon from "@/components/shared/AppIcon";
+import { ProfileSetupModal } from "@/components/shared/ProfileSetupModal";
+
+const FarmerChat = dynamic(
+  () => import("@/components/farmer/FarmerChat").then((m) => m.FarmerChat),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-96 w-full rounded-2xl bg-emerald-950/5 border border-dashed border-emerald-800/20 flex items-center justify-center text-xs text-muted-foreground animate-pulse">
+        <span>Loading KisanLoop AI Chat...</span>
+      </div>
+    ),
+  }
+);
+
+const CadastralLeafletMap = dynamic(
+  () => import("@/components/map/CadastralLeafletMap"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-80 w-full rounded-2xl bg-emerald-950/5 border-2 border-dashed border-emerald-800/20 flex items-center justify-center text-xs text-muted-foreground animate-pulse">
+        <span>Loading Cadastral GIS Field Map...</span>
+      </div>
+    ),
+  }
+);
 
 export function FarmerPortal() {
   const router = useRouter();
 
   // Navigation State
-  const [currentTab, setCurrentTab] = useState<"today" | "farm" | "actions" | "journey" | "expert" | "profile">("today");
+  const [currentTab, setCurrentTab] = useState<"today" | "farm" | "actions" | "journey" | "expert" | "chat" | "profile">("today");
 
   // Language & Theme State
   const [lang, setLang] = useState<"hi" | "en">("en");
@@ -49,19 +76,22 @@ export function FarmerPortal() {
   // Cadastral Zone Selection State
   const [selectedZone, setSelectedZone] = useState<"A" | "B" | "C">("B");
 
-  // Farmer Profile State (Ravi Kumar)
+  // Farmer Profile State
   const [farmerName, setFarmerName] = useState("Ravi Kumar (रवि कुमार)");
   const [farmTitle, setFarmTitle] = useState("Namkum Farm (नामकुम खेत)");
   const [acres, setAcres] = useState("1.2 Acres");
   const [phone, setPhone] = useState("+91 98321 44520");
   const [village, setVillage] = useState("Namkum Village, Ranchi District");
+  const [userRole, setUserRole] = useState<"FARMER" | "EXPERT" | "GOVT" | "ADMIN">("FARMER");
+  const [showProfileSetupModal, setShowProfileSetupModal] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
   const [profileSavedToast, setProfileSavedToast] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(
     "https://lh3.googleusercontent.com/aida/AEtjO1WFAqqIKiTubYibUh9UUxqk24oM3Z-OIvmhO71n6vuOR4pvf2ViPmo2T3MUtFCMddBxWrnR-KSh2O0JXrOk4spzACNWUfwcAkBxVhhJISdHhSirbcTHkUfIhBH8fA3JWxgstKN-XstdGK65IbyA9i9k-OdlXthKQTFRa2RuwZjkjEqSqiXX-KEwqLJGlxe5YkLKk5IIoJ9ozHkbLyjXECFeZK-T9TOr0nj6npkbOA2Mn1-yzZBep1olRb38"
   );
 
-  // Toast Notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const clerk = useClerk();
 
   const handleLogout = async () => {
     try {
@@ -69,18 +99,88 @@ export function FarmerPortal() {
     } catch (err) {
       console.error("Logout error:", err);
     }
+    try {
+      if (clerk && clerk.signOut) {
+        await clerk.signOut({ redirectUrl: "/login" });
+        return;
+      }
+    } catch {}
     window.location.href = "/login";
+  };
+
+  const handleSaveProfile = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setSavingProfile(true);
+    try {
+      const res = await fetch("/api/auth/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role: "FARMER",
+          name: farmerName,
+          phone,
+          village,
+          district: "Ranchi",
+          state: "Jharkhand",
+          farmName: farmTitle,
+          acres: parseFloat(acres) || 1.2,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setProfileSavedToast(true);
+        setTimeout(() => setProfileSavedToast(false), 3500);
+        fetchData();
+      }
+    } catch (err) {
+      console.error("Save profile error:", err);
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   // Fetch live backend data
   const fetchData = async () => {
     try {
       setLoading(true);
+      let targetFarmId = "farm_ravi_01";
+      let targetFarmerId = "frm_ravi";
+
+      try {
+        const meRes = await fetch("/api/auth/me").then((r) => r.json()).catch(() => null);
+        if (meRes?.success && meRes.data?.user) {
+          const u = meRes.data.user;
+          const farmer = meRes.data.farmer;
+          const farm = meRes.data.farm;
+
+          if (u.role) setUserRole(u.role);
+          if (u.name) setFarmerName(u.name);
+          if (farmer?.phone) setPhone(farmer.phone);
+          if (farmer?.village) setVillage(`${farmer.village}, ${farmer.district || "Ranchi"}`);
+          else if (u.district) setVillage(u.district);
+
+          if (farm?.name) setFarmTitle(farm.name);
+          else if (u.name && u.name !== "Farmer") setFarmTitle(`${u.name}'s Farm`);
+
+          if (farm?.totalAreaAcres) setAcres(`${farm.totalAreaAcres} Acres`);
+
+          if (u.farmId) targetFarmId = u.farmId;
+          if (u.id) targetFarmerId = u.id.startsWith("usr_") ? `frm_${u.id.slice(4)}` : u.id;
+
+          // If first login and profile incomplete, prompt setup modal!
+          if (meRes.data.isProfileComplete === false) {
+            setShowProfileSetupModal(true);
+          }
+        }
+      } catch {
+        // Fallback to default farm
+      }
+
       const [stateRes, recsRes, actsRes, outsRes] = await Promise.all([
-        fetch("/api/farm-state?farmId=farm_ravi_01").then((r) => r.json()).catch(() => ({ success: false })),
-        fetch("/api/recommendations?farmId=farm_ravi_01").then((r) => r.json()).catch(() => ({ success: false })),
-        fetch("/api/actions?farmerId=frm_ravi").then((r) => r.json()).catch(() => ({ success: false })),
-        fetch("/api/outcomes?farmId=farm_ravi_01").then((r) => r.json()).catch(() => ({ success: false })),
+        fetch(`/api/farm-state?farmId=${targetFarmId}`).then((r) => r.json()).catch(() => ({ success: false })),
+        fetch(`/api/recommendations?farmId=${targetFarmId}`).then((r) => r.json()).catch(() => ({ success: false })),
+        fetch(`/api/actions?farmerId=${targetFarmerId}`).then((r) => r.json()).catch(() => ({ success: false })),
+        fetch(`/api/outcomes?farmId=${targetFarmId}`).then((r) => r.json()).catch(() => ({ success: false })),
       ]);
 
       if (stateRes.success) setFarmState(stateRes.data);
@@ -471,6 +571,28 @@ export function FarmerPortal() {
 
             <button
               className={`nav-item flex items-center gap-3.5 px-4 py-3 rounded-xl font-semibold text-sm transition-all text-left cursor-pointer ${
+                currentTab === "chat"
+                  ? "bg-[#214E34] text-white shadow-sm"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-[#F6F5EF]"
+              }`}
+              onClick={() => setCurrentTab("chat")}
+            >
+              <div className="relative">
+                <AppIcon name="forum" className="w-5 h-5" />
+                <span className="w-2 h-2 rounded-full bg-emerald-500 absolute -top-0.5 -right-0.5 animate-pulse"></span>
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-sm leading-tight">
+                  {lang === "hi" ? "किसान AI चैट" : "Farmer AI Chat"}
+                </span>
+                <span className="text-[11px] text-secondary font-normal">
+                  {lang === "hi" ? "Gemini 3.5 Flash सलाह" : "Gemini 3.5 Assistant"}
+                </span>
+              </div>
+            </button>
+
+            <button
+              className={`nav-item flex items-center gap-3.5 px-4 py-3 rounded-xl font-semibold text-sm transition-all text-left cursor-pointer ${
                 currentTab === "profile"
                   ? "bg-[#214E34] text-white shadow-sm"
                   : "text-slate-600 dark:text-slate-300 hover:bg-[#F6F5EF]"
@@ -589,6 +711,17 @@ export function FarmerPortal() {
             <div className="hidden md:flex px-3 py-1 bg-white border border-[#ebeae2] rounded-full text-xs font-semibold text-charcoal shadow-xs">
               🌾 <span>{lang === "hi" ? "धान (IR-64) • कल्ले फूटने की अवस्था" : "Rice (धान) • Day 38 (Tillering)"}</span>
             </div>
+            {/* Role Switcher Badge / Button */}
+            <button
+              type="button"
+              onClick={() => setShowProfileSetupModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#ebf7eb] dark:bg-emerald-950/40 hover:bg-[#d8edd8] text-[#1b4332] dark:text-emerald-400 rounded-full border border-[#d2ded5] dark:border-emerald-800 text-xs font-bold shadow-xs transition-all cursor-pointer"
+              title="Change Role / Setup Profile"
+            >
+              <AppIcon name="manage_accounts" className="w-4 h-4" />
+              <span>Role: {userRole}</span>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-300 underline font-normal">(Switch)</span>
+            </button>
             {/* Quick Header Logout Button */}
             <button
               type="button"
@@ -629,12 +762,12 @@ export function FarmerPortal() {
                         </span>
                       </div>
                       <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold tracking-tight">
-                        {lang === "hi" ? "नमस्ते रवि कुमार जी! 👋 🌾" : "Namaste Ravi Kumar ji! 👋 🌾"}
+                        {lang === "hi" ? `नमस्ते ${farmerName}! 👋 🌾` : `Namaste ${farmerName}! 👋 🌾`}
                       </h1>
                       <p className="text-white/90 text-sm sm:text-base font-medium max-w-xl">
-                        {lang === "hi"
-                          ? "नामकुम खेत • 1.2 एकड़। कल्ले फूट रहे हैं। आज केवल 1 छोटी जांच जरूरी है।"
-                          : "Namkum Farm • Plot 2 (1.2 ac). Crop is tillering well. Only 1 quick check required."}
+                        {farmTitle} • {acres}. {lang === "hi"
+                          ? "कल्ले फूट रहे हैं। आज केवल 1 छोटी जांच जरूरी है।"
+                          : "Crop is tillering well. Only 1 quick check required."}
                       </p>
                     </div>
 
@@ -934,80 +1067,61 @@ export function FarmerPortal() {
                     </span>
                   </div>
 
-                  {/* SVG Farm Map */}
-                  <div className="relative w-full h-auto min-h-[22rem] sm:h-80 bg-emerald-950/5 rounded-2xl border-2 border-dashed border-emerald-800/20 overflow-hidden flex items-center justify-center p-2.5 sm:p-4">
-                    {/* Canal Sluice Line */}
-                    <div className="absolute top-0 right-1/4 bottom-0 w-8 bg-sky-200/60 dark:bg-sky-900/40 border-x border-sky-400/40 flex items-center justify-center">
-                      <span className="text-[9px] font-bold text-sky-800 dark:text-sky-300 rotate-90 tracking-widest uppercase">
-                        Canal Sluice
-                      </span>
-                    </div>
+                  {/* Real Interactive Leaflet Cadastral Map */}
+                  <CadastralLeafletMap
+                    selectedZone={selectedZone}
+                    onSelectZone={setSelectedZone}
+                    lang={lang}
+                  />
 
-                    {/* Zone Cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 w-full h-full z-10">
-                      {/* Zone A */}
-                      <button
-                        className={`zone-card rounded-xl p-4 flex flex-col justify-between text-left transition-all cursor-pointer ${
-                          selectedZone === "A"
-                            ? "bg-emerald-500/30 border-2 border-primary ring-2 ring-primary shadow-md"
-                            : "bg-emerald-500/20 hover:bg-emerald-500/30 border-2 border-emerald-600"
-                        }`}
-                        onClick={() => setSelectedZone("A")}
-                      >
-                        <div>
-                          <span className="px-2 py-0.5 bg-emerald-700 text-white rounded text-[10px] font-bold">ZONE A</span>
-                          <h5 className="text-sm font-bold text-charcoal mt-2">Upper Plot</h5>
-                          <span className="text-xs text-secondary">0.5 Acres</span>
-                        </div>
-                        <div className="flex items-center justify-between text-xs font-semibold text-emerald-800">
-                          <span>Healthy • 88%</span>
-                          <AppIcon name="verified" className="w-[18px] h-[18px]" />
-                        </div>
-                      </button>
+                  {/* 3 Zone Selector Cards below map */}
+                  <div className="grid grid-cols-3 gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedZone("A")}
+                      className={`p-2.5 rounded-xl text-left border transition cursor-pointer ${
+                        selectedZone === "A"
+                          ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-500 font-bold ring-1 ring-emerald-500 shadow-xs"
+                          : "bg-muted/20 border-[#e5ece7] dark:border-white/10 hover:bg-muted/40"
+                      }`}
+                    >
+                      <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold">ZONE A</div>
+                      <div className="text-xs text-foreground font-semibold truncate">Upper Plot</div>
+                      <div className="text-[10px] text-emerald-800 dark:text-emerald-300 font-medium">0.5 ac • 88% Healthy</div>
+                    </button>
 
-                      {/* Zone B (Target) */}
-                      <button
-                        className={`zone-card rounded-xl p-4 flex flex-col justify-between text-left transition-all cursor-pointer shadow-md ${
-                          selectedZone === "B"
-                            ? "bg-amber-500/30 ring-2 ring-amber-600 border-2 border-amber-600"
-                            : "bg-amber-500/20 hover:bg-amber-500/30 border-2 border-amber-500"
-                        }`}
-                        onClick={() => setSelectedZone("B")}
-                      >
-                        <div>
-                          <span className="px-2 py-0.5 bg-amber-600 text-white rounded text-[10px] font-bold animate-pulse">
-                            ZONE B • ATTENTION
-                          </span>
-                          <h5 className="text-sm font-bold text-charcoal mt-2">Canal Basin</h5>
-                          <span className="text-xs text-secondary">0.4 Acres</span>
-                        </div>
-                        <div className="flex items-center justify-between text-xs font-bold text-amber-900">
-                          <span>Moisture Trap</span>
-                          <AppIcon name="warning" className="w-[18px] h-[18px]" />
-                        </div>
-                      </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedZone("B")}
+                      className={`p-2.5 rounded-xl text-left border transition cursor-pointer ${
+                        selectedZone === "B"
+                          ? "bg-amber-50 dark:bg-amber-950/60 border-amber-500 font-bold ring-2 ring-amber-500 shadow-xs"
+                          : "bg-muted/20 border-[#e5ece7] dark:border-white/10 hover:bg-muted/40"
+                      }`}
+                    >
+                      <div className="text-[10px] text-amber-700 dark:text-amber-400 font-bold flex items-center gap-1">
+                        <span>ZONE B</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                      </div>
+                      <div className="text-xs text-foreground font-semibold truncate">Canal Basin</div>
+                      <div className="text-[10px] text-amber-900 dark:text-amber-300 font-semibold">0.4 ac • Blast Alert</div>
+                    </button>
 
-                      {/* Zone C */}
-                      <button
-                        className={`zone-card rounded-xl p-4 flex flex-col justify-between text-left transition-all cursor-pointer ${
-                          selectedZone === "C"
-                            ? "bg-emerald-500/30 border-2 border-primary ring-2 ring-primary shadow-md"
-                            : "bg-emerald-500/20 hover:bg-emerald-500/30 border-2 border-emerald-600"
-                        }`}
-                        onClick={() => setSelectedZone("C")}
-                      >
-                        <div>
-                          <span className="px-2 py-0.5 bg-emerald-700 text-white rounded text-[10px] font-bold">ZONE C</span>
-                          <h5 className="text-sm font-bold text-charcoal mt-2">Well-head Ridge</h5>
-                          <span className="text-xs text-secondary">0.3 Acres</span>
-                        </div>
-                        <div className="flex items-center justify-between text-xs font-semibold text-emerald-800">
-                          <span>Optimal • 85%</span>
-                          <AppIcon name="verified" className="w-[18px] h-[18px]" />
-                        </div>
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedZone("C")}
+                      className={`p-2.5 rounded-xl text-left border transition cursor-pointer ${
+                        selectedZone === "C"
+                          ? "bg-cyan-50 dark:bg-cyan-950/60 border-cyan-500 font-bold ring-1 ring-cyan-500 shadow-xs"
+                          : "bg-muted/20 border-[#e5ece7] dark:border-white/10 hover:bg-muted/40"
+                      }`}
+                    >
+                      <div className="text-[10px] text-cyan-700 dark:text-cyan-400 font-bold">ZONE C</div>
+                      <div className="text-xs text-foreground font-semibold truncate">Well-head Ridge</div>
+                      <div className="text-[10px] text-cyan-800 dark:text-cyan-300 font-medium">0.3 ac • Saturated</div>
+                    </button>
                   </div>
+
 
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-secondary pt-2 gap-1">
                     <span>📍 Lat: 23.3441° N, Lon: 85.3096° E (Namkum, Ranchi)</span>
@@ -1422,11 +1536,7 @@ export function FarmerPortal() {
                   </h4>
                   <form
                     className="space-y-4"
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      setProfileSavedToast(true);
-                      setTimeout(() => setProfileSavedToast(false), 2500);
-                    }}
+                    onSubmit={handleSaveProfile}
                   >
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
@@ -1476,20 +1586,52 @@ export function FarmerPortal() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-4 border-t border-[#ebeae2]">
+                    <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-[#ebeae2]">
                       <span className={`text-xs font-semibold text-emerald-800 transition-opacity ${profileSavedToast ? "opacity-100" : "opacity-0"}`}>
-                        Profile saved successfully ✓
+                        Profile saved to database ✓
                       </span>
-                      <button
-                        className="px-6 py-2.5 bg-primary hover:bg-[#163624] text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer"
-                        type="submit"
-                      >
-                        Save Changes (परिवर्तन सुरक्षित करें)
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowProfileSetupModal(true)}
+                          className="px-4 py-2.5 bg-[#ebf7eb] dark:bg-emerald-950/40 hover:bg-[#d8edd8] text-[#1b4332] dark:text-emerald-300 font-bold text-xs rounded-xl border border-[#d2ded5] dark:border-emerald-800 transition-all cursor-pointer"
+                        >
+                          {lang === "hi" ? "रोल बदलें / पूर्ण सेटअप" : "Switch Role / Full Setup"}
+                        </button>
+                        <button
+                          className="flex items-center gap-2 px-6 py-2.5 bg-primary hover:bg-[#163624] text-white font-bold text-xs rounded-xl shadow-sm transition-all cursor-pointer disabled:opacity-60"
+                          type="submit"
+                          disabled={savingProfile}
+                        >
+                          {savingProfile && <AppIcon name="sync" className="w-3.5 h-3.5 animate-spin" />}
+                          <span>
+                            {savingProfile
+                              ? lang === "hi"
+                                ? "सहेज रहा है..."
+                                : "Saving..."
+                              : lang === "hi"
+                              ? "परिवर्तन सुरक्षित करें"
+                              : "Save Changes"}
+                          </span>
+                        </button>
+                      </div>
                     </div>
                   </form>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* =============================================================== */}
+          {/* TAB 7: CHAT (किसान AI चैट - Gemini 3.5 Flash)                  */}
+          {/* =============================================================== */}
+          {currentTab === "chat" && (
+            <div className="space-y-4 animate-in fade-in duration-300">
+              <FarmerChat
+                farmerName={farmerName}
+                lang={lang}
+                farmId={farmState?.id || "farm_ravi_01"}
+              />
             </div>
           )}
         </main>
@@ -1569,6 +1711,22 @@ export function FarmerPortal() {
         >
           <AppIcon name="support_agent" className="w-5 h-5" />
           <span>{lang === "hi" ? "सलाहकार" : "Expert"}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setCurrentTab("chat")}
+          className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-[10px] font-bold transition-all cursor-pointer ${
+            currentTab === "chat"
+              ? "text-[#214E34] bg-emerald-50"
+              : "text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <div className="relative">
+            <AppIcon name="forum" className="w-5 h-5" />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 absolute -top-0.5 -right-0.5"></span>
+          </div>
+          <span>{lang === "hi" ? "चैट" : "Chat"}</span>
         </button>
 
         <button
@@ -1994,6 +2152,29 @@ export function FarmerPortal() {
           </div>
         </div>
       )}
+
+      {/* 6. PROFILE SETUP / ROLE SWITCHER MODAL */}
+      <ProfileSetupModal
+        isOpen={showProfileSetupModal}
+        onClose={() => setShowProfileSetupModal(false)}
+        initialData={{
+          name: farmerName,
+          phone,
+          village,
+          farmName: farmTitle,
+          acres,
+          role: userRole,
+        }}
+        onSaved={(data) => {
+          if (data?.user?.name) setFarmerName(data.user.name);
+          if (data?.farmer?.phone) setPhone(data.farmer.phone);
+          if (data?.farmer?.village) setVillage(data.farmer.village);
+          if (data?.farm?.name) setFarmTitle(data.farm.name);
+          if (data?.farm?.totalAreaAcres) setAcres(`${data.farm.totalAreaAcres} Acres`);
+          if (data?.user?.role) setUserRole(data.user.role);
+          fetchData();
+        }}
+      />
     </div>
   );
 }

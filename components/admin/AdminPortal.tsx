@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import AppIcon from "@/components/shared/AppIcon";
+import { ProfileSetupModal } from "@/components/shared/ProfileSetupModal";
 
 interface DocItem {
   id: string;
@@ -70,6 +71,29 @@ export function AdminPortal() {
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [toast, setToast] = useState<{ title: string; message: string; icon: string } | null>(null);
+
+  // Profile & Role State
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [adminName, setAdminName] = useState("Dr. A. Verma");
+  const [adminDesignation, setAdminDesignation] = useState("Agronomy Systems Lead");
+  const [adminDepartment, setAdminDepartment] = useState("KisanLoop Core Platform");
+  const [userRole, setUserRole] = useState<"FARMER" | "EXPERT" | "GOVT" | "ADMIN">("ADMIN");
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && res.data?.user) {
+          const u = res.data.user;
+          if (u.name && u.name !== "Farmer") setAdminName(u.name);
+          if (u.role) setUserRole(u.role);
+          if (res.data.isProfileComplete === false) {
+            setShowProfileModal(true);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const triggerToast = (title: string, message: string, icon = "check_circle") => {
     setToast({ title, message, icon });
@@ -256,15 +280,33 @@ export function AdminPortal() {
             {/* Admin Lead Profile */}
             <div className="flex items-center gap-2.5 pl-3 border-l border-[#eaf0ed] dark:border-white/10">
               <div className="hidden sm:flex flex-col text-right">
-                <span className="text-xs font-bold text-[#111814] dark:text-white">Dr. A. Verma</span>
+                <span className="text-xs font-bold text-[#111814] dark:text-white">{adminName}</span>
                 <span className="text-[10px] text-[#608570] dark:text-zinc-400 font-semibold">
-                  Agronomy Systems Lead
+                  {adminDesignation}
                 </span>
               </div>
               <div className="w-9 h-9 rounded-full bg-[#214e34] text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                AV
+                {adminName
+                  .split(" ")
+                  .filter(Boolean)
+                  .map((n) => n[0])
+                  .slice(0, 2)
+                  .join("")
+                  .toUpperCase() || "AD"}
               </div>
             </div>
+
+            {/* Role Switcher Badge */}
+            <button
+              type="button"
+              onClick={() => setShowProfileModal(true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-[#eaf0ed] dark:bg-zinc-800 hover:bg-[#dce6dc] text-[#214e34] dark:text-emerald-300 rounded-xl border border-[#dce6dc] dark:border-white/10 text-xs font-bold shadow-xs transition cursor-pointer"
+              title="Change Role / Setup Profile"
+            >
+              <AppIcon name="manage_accounts" className="w-4 h-4" />
+              <span>Role: {userRole}</span>
+              <span className="text-[10px] underline font-normal">(Switch)</span>
+            </button>
 
             {/* Dedicated Universal Logout Button */}
             <button
@@ -744,6 +786,23 @@ export function AdminPortal() {
           </div>
         </div>
       )}
+
+      {/* Profile Setup / Role Switcher Modal */}
+      <ProfileSetupModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        initialData={{
+          name: adminName,
+          role: userRole,
+          designation: adminDesignation,
+          department: adminDepartment,
+        }}
+        onSaved={(data) => {
+          if (data?.user?.name) setAdminName(data.user.name);
+          if (data?.user?.role) setUserRole(data.user.role);
+          if (data?.user?.designation) setAdminDesignation(data.user.designation);
+        }}
+      />
     </div>
   );
 }
