@@ -6,6 +6,7 @@ export interface AuthUser {
   preferredLanguage: string;
   district?: string;
   farmId?: string;
+  avatar?: string;
 }
 
 export const TEST_USERS: AuthUser[] = [
@@ -17,6 +18,7 @@ export const TEST_USERS: AuthUser[] = [
     preferredLanguage: "hi",
     district: "Ranchi, Jharkhand",
     farmId: "farm_ravi_01",
+    avatar: "icon:sprout",
   },
   {
     id: "usr_expert_patel",
@@ -25,6 +27,7 @@ export const TEST_USERS: AuthUser[] = [
     role: "EXPERT",
     preferredLanguage: "en",
     district: "KVK Ranchi",
+    avatar: "icon:microscope",
   },
   {
     id: "usr_govt_officer",
@@ -33,6 +36,7 @@ export const TEST_USERS: AuthUser[] = [
     role: "GOVT",
     preferredLanguage: "en",
     district: "Ranchi Agriculture Dept",
+    avatar: "icon:landmark",
   },
   {
     id: "usr_admin_master",
@@ -41,6 +45,7 @@ export const TEST_USERS: AuthUser[] = [
     role: "ADMIN",
     preferredLanguage: "en",
     district: "Headquarters",
+    avatar: "icon:shield",
   },
 ];
 

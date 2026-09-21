@@ -2,7 +2,20 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import AppIcon from "@/components/shared/AppIcon";
+import { ProfileSetupModal } from "@/components/shared/ProfileSetupModal";
+import { ProfileAvatar, ProfileAvatarPickerModal } from "@/components/shared/ProfileAvatarPicker";
+import { useAppLogout } from "@/lib/auth/useAppLogout";
+
+const AgriculturalMap = dynamic(() => import("@/components/dashboard/AgriculturalMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[420px] w-full rounded-2xl bg-muted/40 border flex items-center justify-center text-xs text-muted-foreground animate-pulse">
+      Loading Agricultural GIS Map...
+    </div>
+  ),
+});
 
 interface BlockData {
   name: string;
@@ -22,12 +35,80 @@ const BLOCKS_DATA: BlockData[] = [
 ];
 
 export function GovernmentDashboard() {
-  const [activeModule, setActiveModule] = useState<"overview" | "funnel" | "barriers" | "gis-map" | "outcomes">("overview");
+  const [activeModule, setActiveModule] = useState<"overview" | "funnel" | "barriers" | "gis-map" | "outcomes" | "profile">("overview");
   const [selectedDistrict, setSelectedDistrict] = useState("Ranchi District (18 Blocks)");
   const [selectedSeason, setSelectedSeason] = useState("Kharif Season 2024");
   const [selectedBlock, setSelectedBlock] = useState<BlockData>(BLOCKS_DATA[0]);
   const [mandateTarget, setMandateTarget] = useState(70);
   const [currentAAR, setCurrentAAR] = useState(64.2);
+
+  // Profile & Role Switcher State
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [officialName, setOfficialName] = useState("Dr. S. K. Tirkey");
+  const [officialDesignation, setOfficialDesignation] = useState("Joint Director Agriculture");
+  const [officialDepartment, setOfficialDepartment] = useState("Ranchi District Agriculture Office");
+  const [officialEmail, setOfficialEmail] = useState("jtdir.agri.ranchi@jharkhand.gov.in");
+  const [officialPhone, setOfficialPhone] = useState("+91 94311 88201");
+  const [officialEmployeeId, setOfficialEmployeeId] = useState("JH-AGRI-DIR-1082");
+  const [officialDistrict, setOfficialDistrict] = useState("Ranchi");
+  const [officialState, setOfficialState] = useState("Jharkhand");
+  const [officialOfficeAddress, setOfficialOfficeAddress] = useState("District Agriculture Office, Krishi Bhawan, Kanke Road, Ranchi - 834008");
+  const [officialJurisdiction, setOfficialJurisdiction] = useState("18 Blocks • South Chota Nagpur Division");
+  const [officialSchemes, setOfficialSchemes] = useState("PM-KISAN, NFSM, Soil Health Card, RKVY");
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [userRole, setUserRole] = useState<"FARMER" | "EXPERT" | "GOVT" | "ADMIN">("GOVT");
+  const [officialAvatar, setOfficialAvatar] = useState("icon:landmark");
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.success && res.data?.user) {
+          const u = res.data.user;
+          if (u.name && u.name !== "Farmer") setOfficialName(u.name);
+          if (u.email) setOfficialEmail(u.email);
+          if (u.role) setUserRole(u.role);
+          if (u.avatar) setOfficialAvatar(u.avatar);
+          if (res.data.isProfileComplete === false) {
+            setShowProfileModal(true);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleSaveGovtProfile = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setSavingProfile(true);
+    try {
+      const res = await fetch("/api/auth/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role: "GOVT",
+          name: officialName,
+          phone: officialPhone,
+          designation: officialDesignation,
+          department: officialDepartment,
+          district: officialDistrict,
+          state: officialState,
+          avatar: officialAvatar,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        triggerToast("Official Profile Saved", "Directorate profile and credentials updated successfully.", "verified");
+      } else {
+        triggerToast("Save Error", data.error || "Failed to update profile.", "error");
+      }
+    } catch (err: any) {
+      console.error(err);
+      triggerToast("Error", "Network error saving profile.", "error");
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   // Modals & Popups
   const [showExportModal, setShowExportModal] = useState(false);
@@ -41,14 +122,7 @@ export function GovernmentDashboard() {
     setTimeout(() => setToast(null), 3800);
   };
 
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } catch (e) {
-      console.error(e);
-    }
-    window.location.href = "/login";
-  };
+  const { logout: handleLogout } = useAppLogout();
 
   const handleExportBrief = () => {
     setExporting(true);
@@ -73,9 +147,14 @@ export function GovernmentDashboard() {
           {/* Brand Header */}
           <div className="h-16 px-5 border-b border-[#e5ece7] dark:border-white/10 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-[#05371f] text-white flex items-center justify-center font-black text-sm shadow-xs">
-                KL
-              </div>
+              <img
+                src="/logo.png"
+                alt="KisanLoop"
+                className="w-9 h-9 object-contain rounded-xl shadow-xs shrink-0"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
               <div className="flex flex-col">
                 <span className="font-black text-base text-[#05371f] dark:text-emerald-400 tracking-tight leading-none">
                   KisanLoop
@@ -163,6 +242,19 @@ export function GovernmentDashboard() {
               <span>Verified Outcomes</span>
             </button>
 
+            <button
+              type="button"
+              onClick={() => setActiveModule("profile")}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition text-left cursor-pointer ${
+                activeModule === "profile"
+                  ? "bg-[#214e34] text-white shadow-xs"
+                  : "text-[#4f6351] dark:text-zinc-300 hover:bg-[#eaf0ed] dark:hover:bg-zinc-800"
+              }`}
+            >
+              <AppIcon name="person" className="w-6 h-6" />
+              <span>Official Profile</span>
+            </button>
+
             {/* Mandate Target Card */}
             <div className="pt-4 mt-4 border-t border-[#e2ebe4] dark:border-white/10">
               <div className="p-3 bg-[#ebf7eb] dark:bg-[#151e18] rounded-xl border border-[#d2ded5] dark:border-white/10 space-y-2">
@@ -213,16 +305,26 @@ export function GovernmentDashboard() {
             </button>
           </div>
 
-          <div className="flex items-center gap-2.5 px-2 py-1">
+          <div
+            onClick={() => setActiveModule("profile")}
+            className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-[#ebf7eb] dark:hover:bg-zinc-800 cursor-pointer transition"
+            title="View & Edit Official Profile"
+          >
             <div className="w-8 h-8 rounded-lg bg-[#05371f] text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
-              ST
+              {officialName
+                .split(" ")
+                .filter(Boolean)
+                .map((n) => n[0])
+                .slice(0, 2)
+                .join("")
+                .toUpperCase() || "GO"}
             </div>
             <div className="flex flex-col min-w-0 flex-1">
               <span className="text-xs font-bold text-[#141e17] dark:text-white truncate">
-                Dr. S. K. Tirkey
+                {officialName}
               </span>
               <span className="text-[10px] text-[#4f6351] dark:text-zinc-400 truncate">
-                Joint Director Agriculture
+                {officialDesignation}
               </span>
             </div>
           </div>
@@ -280,15 +382,33 @@ export function GovernmentDashboard() {
               <span className="sm:hidden">Brief</span>
             </button>
 
+            {/* Official Profile Avatar Button */}
+            <div
+              onClick={() => setActiveModule("profile")}
+              className="flex items-center gap-2 pl-2 border-l border-[#eaf0ed] dark:border-white/10 cursor-pointer hover:opacity-85 transition"
+              title="View & Edit Official Profile"
+            >
+              <div className="hidden sm:flex flex-col text-right">
+                <span className="text-xs font-bold text-[#141e17] dark:text-white leading-tight">{officialName}</span>
+                <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">{officialDesignation}</span>
+              </div>
+              <ProfileAvatar
+                avatar={officialAvatar}
+                role="GOVT"
+                name={officialName}
+                size="sm"
+              />
+            </div>
+
             {/* Quick Header Logout Button */}
             <button
               type="button"
               onClick={handleLogout}
-              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-white dark:bg-zinc-800 hover:bg-red-50 text-red-600 rounded-xl border border-[#dce6dc] dark:border-white/10 hover:border-red-200 text-xs font-bold shadow-xs transition cursor-pointer"
-              title="Logout"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl border border-red-200 text-xs font-bold shadow-xs transition-all cursor-pointer hover:shadow-sm"
+              title="Logout from Government Desk"
             >
-              <AppIcon name="logout" className="w-4 h-4" />
-              <span className="hidden md:inline">Logout</span>
+              <AppIcon name="logout" className="w-4 h-4 text-red-600" />
+              <span>Logout</span>
             </button>
           </div>
         </header>
@@ -349,6 +469,17 @@ export function GovernmentDashboard() {
             }`}
           >
             Field Outcomes
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveModule("profile")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeModule === "profile"
+                ? "bg-[#214e34] text-white shadow-xs"
+                : "bg-[#f1fcf1] dark:bg-zinc-800 text-[#4f6351] dark:text-zinc-300 border border-[#dce6dc] dark:border-white/10"
+            }`}
+          >
+            Official Profile
           </button>
         </div>
 
@@ -668,37 +799,9 @@ export function GovernmentDashboard() {
                 </div>
               </div>
 
-              {/* Simulated SVG Cadastral Map */}
-              <div className="h-72 rounded-2xl bg-[#eef4ee] dark:bg-zinc-900 border border-[#d2ded5] dark:border-white/10 relative overflow-hidden flex items-center justify-center">
-                <svg className="w-full h-full" viewBox="0 0 800 320">
-                  {/* Background grid */}
-                  <pattern id="govGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#d2ded5" strokeWidth="0.5" opacity="0.4" />
-                  </pattern>
-                  <rect width="800" height="320" fill="url(#govGrid)" />
-
-                  {/* Parcels */}
-                  <path d="M120 40 L280 30 L320 180 L140 190 Z" fill="#d1e7d1" stroke="#214e34" strokeWidth="2" />
-                  <path d="M280 30 L520 20 L560 170 L320 180 Z" fill="#ffdad6" stroke="#ba1a1a" strokeWidth="2" />
-                  <path d="M320 180 L560 170 L520 290 L290 280 Z" fill="#ffdcc3" stroke="#c2410c" strokeWidth="2" />
-                  <path d="M140 190 L320 180 L290 280 L110 270 Z" fill="#d1e7d1" stroke="#214e34" strokeWidth="2" />
-                  <path d="M520 20 L720 10 L750 160 L560 170 Z" fill="#d1e7d1" stroke="#214e34" strokeWidth="2" />
-
-                  <text x="180" y="110" fontSize="13" fontWeight="bold" fill="#214e34">Kanke (Safe)</text>
-                  <text x="390" y="90" fontSize="14" fontWeight="black" fill="#ba1a1a">Namkum (Blast Hotspot - 68%)</text>
-                  <text x="370" y="240" fontSize="13" fontWeight="bold" fill="#c2410c">Ratu (Attention)</text>
-                  <text x="160" y="245" fontSize="13" fontWeight="bold" fill="#214e34">Ormanjhi (76.8% AAR)</text>
-                  <text x="610" y="90" fontSize="13" fontWeight="bold" fill="#214e34">Bero (Saline)</text>
-
-                  {/* Pulsing Hotspot Marker */}
-                  <circle cx="430" cy="110" r="14" fill="#ba1a1a" className="animate-ping" opacity="0.5" />
-                  <circle cx="430" cy="110" r="7" fill="#ba1a1a" />
-                </svg>
-
-                <div className="absolute bottom-3 left-3 bg-white/90 dark:bg-zinc-900/90 backdrop-blur px-3 py-1.5 rounded-xl border text-[11px] font-bold text-[#05371f] dark:text-white flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
-                  <span>Active Selection: {selectedBlock.name} ({selectedBlock.totalPlots} monitored parcels)</span>
-                </div>
+              {/* Interactive Agricultural GIS Map */}
+              <div className="w-full">
+                <AgriculturalMap />
               </div>
 
               {/* Block Statistics Grid */}
@@ -733,6 +836,292 @@ export function GovernmentDashboard() {
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* ================================================================= */}
+          {/* MODULE 5: OFFICIAL PROFILE & GOVERNANCE DESK                      */}
+          {/* ================================================================= */}
+          {activeModule === "profile" && (
+            <div className="space-y-6">
+              {/* Top Official Banner Card */}
+              <div className="p-6 rounded-3xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <ProfileAvatar
+                      avatar={officialAvatar}
+                      role="GOVT"
+                      name={officialName}
+                      size="xl"
+                      showBadge={true}
+                      onClick={() => setShowAvatarModal(true)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-xl font-black text-[#141e17] dark:text-white">{officialName}</h2>
+                      <button
+                        type="button"
+                        onClick={() => setShowAvatarModal(true)}
+                        className="text-xs text-emerald-700 dark:text-emerald-400 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <AppIcon name="photo_camera" className="w-3.5 h-3.5" />
+                        <span>Change Icon / Avatar</span>
+                      </button>
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider">
+                        Authorized Gazetted Officer (Class-I)
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#4f6351] dark:text-zinc-300 font-semibold">{officialDesignation}</p>
+                    <div className="flex items-center gap-3 text-xs text-[#4f6351] dark:text-zinc-400">
+                      <span className="flex items-center gap-1">
+                        <AppIcon name="domain" className="w-3.5 h-3.5 text-[#05371f] dark:text-emerald-400" />
+                        {officialDepartment}
+                      </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <AppIcon name="badge" className="w-3.5 h-3.5 text-[#05371f] dark:text-emerald-400" />
+                        Emp ID: {officialEmployeeId}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 self-stretch md:self-auto justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowProfileModal(true)}
+                    className="px-3.5 py-2 rounded-xl bg-[#ebf7eb] dark:bg-zinc-800 hover:bg-[#dce6dc] text-[#05371f] dark:text-zinc-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <AppIcon name="switch_account" className="w-4 h-4" />
+                    <span>Switch Role</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveGovtProfile}
+                    disabled={savingProfile}
+                    className="px-5 py-2 rounded-xl bg-[#05371f] hover:bg-[#163624] text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <AppIcon name="save" className={`w-4 h-4 ${savingProfile ? "animate-spin" : ""}`} />
+                    <span>{savingProfile ? "Saving Profile..." : "Save Profile"}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Administrative Impact Metrics */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#4f6351] dark:text-zinc-400">Jurisdiction</span>
+                    <AppIcon name="map" className="w-4 h-4 text-[#05371f] dark:text-emerald-400" />
+                  </div>
+                  <p className="text-2xl font-black text-[#141e17] dark:text-white tracking-tight mt-1">18 Blocks</p>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">Ranchi District</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#4f6351] dark:text-zinc-400">Registered Farmers</span>
+                    <AppIcon name="groups" className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <p className="text-2xl font-black text-[#141e17] dark:text-white tracking-tight mt-1">18,420+</p>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">AgriStack e-KYC linked</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#4f6351] dark:text-zinc-400">Active DBT Schemes</span>
+                    <AppIcon name="payments" className="w-4 h-4 text-amber-600" />
+                  </div>
+                  <p className="text-2xl font-black text-[#141e17] dark:text-white tracking-tight mt-1">4 Schemes</p>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">PM-KISAN &amp; NFSM</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#4f6351] dark:text-zinc-400">Advisory AAR</span>
+                    <AppIcon name="speed" className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <p className="text-2xl font-black text-[#141e17] dark:text-white tracking-tight mt-1">{currentAAR}%</p>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">+52.2% vs baseline</span>
+                </div>
+              </div>
+
+              {/* 2-Column Editable Official Profile Form */}
+              <form onSubmit={handleSaveGovtProfile} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Column: Official Administrative Details */}
+                <div className="p-6 rounded-3xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs space-y-4">
+                  <div className="flex items-center gap-2 border-b border-[#eaf0ed] dark:border-white/10 pb-3">
+                    <AppIcon name="account_balance" className="w-5 h-5 text-[#05371f] dark:text-emerald-400" />
+                    <h3 className="font-bold text-sm text-[#141e17] dark:text-white">Official Administrative Profile</h3>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">Official Officer Full Name</label>
+                      <input
+                        type="text"
+                        value={officialName}
+                        onChange={(e) => setOfficialName(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none"
+                        placeholder="e.g. Dr. S. K. Tirkey"
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">Official Designation / Rank</label>
+                        <input
+                          type="text"
+                          value={officialDesignation}
+                          onChange={(e) => setOfficialDesignation(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none"
+                          placeholder="Joint Director Agriculture"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">Employee ID / Service Code</label>
+                        <input
+                          type="text"
+                          value={officialEmployeeId}
+                          onChange={(e) => setOfficialEmployeeId(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none font-mono"
+                          placeholder="JH-AGRI-DIR-1082"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">Department / Directorate</label>
+                      <input
+                        type="text"
+                        value={officialDepartment}
+                        onChange={(e) => setOfficialDepartment(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none"
+                        placeholder="Ranchi District Agriculture Office, Dept of Agri"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">Jurisdictional Division &amp; Scope</label>
+                      <input
+                        type="text"
+                        value={officialJurisdiction}
+                        onChange={(e) => setOfficialJurisdiction(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none"
+                        placeholder="18 Blocks • South Chota Nagpur Division"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Contact & Office Location */}
+                <div className="p-6 rounded-3xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs space-y-4">
+                  <div className="flex items-center gap-2 border-b border-[#eaf0ed] dark:border-white/10 pb-3">
+                    <AppIcon name="location_city" className="w-5 h-5 text-emerald-600" />
+                    <h3 className="font-bold text-sm text-[#141e17] dark:text-white">Headquarters &amp; Contact Information</h3>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">Official Gov Email</label>
+                        <input
+                          type="email"
+                          value={officialEmail}
+                          onChange={(e) => setOfficialEmail(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none"
+                          placeholder="officer@jharkhand.gov.in"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">Official Desk Hotline</label>
+                        <input
+                          type="tel"
+                          value={officialPhone}
+                          onChange={(e) => setOfficialPhone(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none"
+                          placeholder="+91 94311 88201"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">District Headquarters</label>
+                        <input
+                          type="text"
+                          value={officialDistrict}
+                          onChange={(e) => setOfficialDistrict(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none"
+                          placeholder="Ranchi"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">State</label>
+                        <input
+                          type="text"
+                          value={officialState}
+                          onChange={(e) => setOfficialState(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none"
+                          placeholder="Jharkhand"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">Office Physical Address</label>
+                      <input
+                        type="text"
+                        value={officialOfficeAddress}
+                        onChange={(e) => setOfficialOfficeAddress(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none"
+                        placeholder="District Agriculture Office, Krishi Bhawan, Kanke Road..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">Assigned DBT Subsidy &amp; Extension Mandates</label>
+                      <input
+                        type="text"
+                        value={officialSchemes}
+                        onChange={(e) => setOfficialSchemes(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none"
+                        placeholder="PM-KISAN, NFSM, Soil Health Card, RKVY"
+                      />
+                    </div>
+
+                    <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/80 dark:border-emerald-800/40 text-[11px] text-[#05371f] dark:text-emerald-300 space-y-1">
+                      <div className="font-bold flex items-center gap-1.5">
+                        <AppIcon name="security" className="w-3.5 h-3.5" />
+                        AgriStack e-KYC &amp; Direct Benefit Transfer Authentication
+                      </div>
+                      <p className="text-[10px] text-[#4f6351] dark:text-zinc-400">
+                        This administrative account is linked to the Jharkhand e-Samarth portal and authorized to validate input barrier allocations and DBT subsidy disbursements.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Submit Actions */}
+                <div className="lg:col-span-2 flex items-center justify-between pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveModule("overview")}
+                    className="px-4 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 text-xs font-bold text-[#4f6351] dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition cursor-pointer"
+                  >
+                    ← Back to Overview
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingProfile}
+                    className="px-6 py-2.5 rounded-xl bg-[#05371f] hover:bg-[#163624] text-white text-xs font-bold transition shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    <AppIcon name="check" className={`w-4 h-4 ${savingProfile ? "animate-spin" : ""}`} />
+                    <span>{savingProfile ? "Saving Profile..." : "Save Official Profile Changes"}</span>
+                  </button>
+                </div>
+              </form>
             </div>
           )}
         </main>
@@ -867,6 +1256,53 @@ export function GovernmentDashboard() {
           </div>
         </div>
       )}
+
+      {/* Profile Setup / Role Switcher Modal */}
+      <ProfileSetupModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        initialData={{
+          name: officialName,
+          role: userRole,
+          designation: officialDesignation,
+          department: officialDepartment,
+          avatar: officialAvatar,
+        }}
+        onSaved={(data) => {
+          if (data?.user?.name) setOfficialName(data.user.name);
+          if (data?.user?.role) setUserRole(data.user.role);
+          if (data?.user?.designation) setOfficialDesignation(data.user.designation);
+          if (data?.user?.avatar) setOfficialAvatar(data.user.avatar);
+        }}
+      />
+
+      {/* Profile Avatar / Icon Studio Modal */}
+      <ProfileAvatarPickerModal
+        isOpen={showAvatarModal}
+        onClose={() => setShowAvatarModal(false)}
+        currentAvatar={officialAvatar}
+        role="GOVT"
+        userName={officialName}
+        onSelectAvatar={(newAvatar) => {
+          setOfficialAvatar(newAvatar);
+          // Persist to backend
+          fetch("/api/auth/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              role: "GOVT",
+              name: officialName,
+              phone: officialPhone,
+              designation: officialDesignation,
+              department: officialDepartment,
+              district: officialDistrict,
+              state: officialState,
+              avatar: newAvatar,
+            }),
+          }).catch(console.error);
+          triggerToast("Avatar Updated", "Official profile icon/avatar updated.", "verified");
+        }}
+      />
     </div>
   );
 }

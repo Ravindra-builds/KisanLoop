@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { knowledgeService } from "@/lib/services/knowledge.service";
 

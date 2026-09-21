@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { actionService } from "@/lib/services/action.service";
 import { mockDb } from "@/lib/db/mock-storage";

@@ -227,7 +227,7 @@ KisanLoop includes a complete 20-table schema (`lib/db/schema.ts`) with PostGIS 
 2. Set in `.env.local`:
    ```env
    AI_PROVIDER=google
-   AI_MODEL=gemini-1.5-flash
+   AI_MODEL=gemini-3.5-flash
    GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_key
    VISION_PROVIDER=google
    VISION_API_KEY=your_gemini_api_key
