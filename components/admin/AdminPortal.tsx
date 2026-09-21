@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import AppIcon from "@/components/shared/AppIcon";
 import { ProfileSetupModal } from "@/components/shared/ProfileSetupModal";
+import { ProfileAvatar, ProfileAvatarPickerModal } from "@/components/shared/ProfileAvatarPicker";
 import { useAppLogout } from "@/lib/auth/useAppLogout";
 
 interface DocItem {
@@ -79,6 +80,8 @@ export function AdminPortal() {
   const [adminDesignation, setAdminDesignation] = useState("Agronomy Systems Lead");
   const [adminDepartment, setAdminDepartment] = useState("KisanLoop Core Platform");
   const [userRole, setUserRole] = useState<"FARMER" | "EXPERT" | "GOVT" | "ADMIN">("ADMIN");
+  const [adminAvatar, setAdminAvatar] = useState("icon:shield");
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -88,6 +91,7 @@ export function AdminPortal() {
           const u = res.data.user;
           if (u.name && u.name !== "Farmer") setAdminName(u.name);
           if (u.role) setUserRole(u.role);
+          if (u.avatar) setAdminAvatar(u.avatar);
           if (res.data.isProfileComplete === false) {
             setShowProfileModal(true);
           }
@@ -172,9 +176,14 @@ export function AdminPortal() {
         <header className="flex flex-wrap items-center justify-between border-b border-[#eaf0ed] dark:border-white/10 pb-4 mb-4 gap-4">
           <div className="flex items-center gap-3 sm:gap-5 flex-wrap">
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-[#214e34] text-white flex items-center justify-center shadow-xs">
-                <AppIcon name="settings_suggest" className="w-5 h-5 text-white" />
-              </div>
+              <img
+                src="/logo.png"
+                alt="KisanLoop"
+                className="w-10 h-10 object-contain rounded-xl shadow-xs shrink-0"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-lg font-black text-[#111814] dark:text-white tracking-tight">KisanLoop</h1>
@@ -272,22 +281,23 @@ export function AdminPortal() {
             </button>
 
             {/* Admin Lead Profile */}
-            <div className="flex items-center gap-2.5 pl-3 border-l border-[#eaf0ed] dark:border-white/10">
+            <div
+              onClick={() => setShowAvatarModal(true)}
+              className="flex items-center gap-2.5 pl-3 border-l border-[#eaf0ed] dark:border-white/10 cursor-pointer hover:opacity-85 transition"
+              title="Click to change Admin Profile Avatar"
+            >
               <div className="hidden sm:flex flex-col text-right">
                 <span className="text-xs font-bold text-[#111814] dark:text-white">{adminName}</span>
                 <span className="text-[10px] text-[#608570] dark:text-zinc-400 font-semibold">
                   {adminDesignation}
                 </span>
               </div>
-              <div className="w-9 h-9 rounded-full bg-[#214e34] text-white flex items-center justify-center font-bold text-xs shadow-xs">
-                {adminName
-                  .split(" ")
-                  .filter(Boolean)
-                  .map((n) => n[0])
-                  .slice(0, 2)
-                  .join("")
-                  .toUpperCase() || "AD"}
-              </div>
+              <ProfileAvatar
+                avatar={adminAvatar}
+                role="ADMIN"
+                name={adminName}
+                size="sm"
+              />
             </div>
 
             {/* Profile Setup / View Button */}
@@ -789,11 +799,38 @@ export function AdminPortal() {
           role: userRole,
           designation: adminDesignation,
           department: adminDepartment,
+          avatar: adminAvatar,
         }}
         onSaved={(data) => {
           if (data?.user?.name) setAdminName(data.user.name);
           if (data?.user?.role) setUserRole(data.user.role);
           if (data?.user?.designation) setAdminDesignation(data.user.designation);
+          if (data?.user?.avatar) setAdminAvatar(data.user.avatar);
+        }}
+      />
+
+      {/* Profile Avatar / Icon Studio Modal */}
+      <ProfileAvatarPickerModal
+        isOpen={showAvatarModal}
+        onClose={() => setShowAvatarModal(false)}
+        currentAvatar={adminAvatar}
+        role="ADMIN"
+        userName={adminName}
+        onSelectAvatar={(newAvatar) => {
+          setAdminAvatar(newAvatar);
+          // Persist to backend
+          fetch("/api/auth/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              role: "ADMIN",
+              name: adminName,
+              designation: adminDesignation,
+              department: adminDepartment,
+              avatar: newAvatar,
+            }),
+          }).catch(console.error);
+          triggerToast("Avatar Updated", "Admin profile icon/avatar updated.", "verified");
         }}
       />
     </div>

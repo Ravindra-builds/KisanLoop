@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import AppIcon from "@/components/shared/AppIcon";
 import { ProfileSetupModal } from "@/components/shared/ProfileSetupModal";
+import { ProfileAvatar, ProfileAvatarPickerModal } from "@/components/shared/ProfileAvatarPicker";
 import { useAppLogout } from "@/lib/auth/useAppLogout";
 
 interface CaseItem {
@@ -155,6 +156,8 @@ export function ExpertPortal() {
   );
   const [savingProfile, setSavingProfile] = useState(false);
   const [userRole, setUserRole] = useState<"FARMER" | "EXPERT" | "GOVT" | "ADMIN">("EXPERT");
+  const [expertAvatar, setExpertAvatar] = useState("icon:microscope");
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -165,6 +168,7 @@ export function ExpertPortal() {
           if (u.name && u.name !== "Farmer") setExpertName(u.name);
           if (u.email) setExpertEmail(u.email);
           if (u.role) setUserRole(u.role);
+          if (u.avatar) setExpertAvatar(u.avatar);
           if (res.data.isProfileComplete === false) {
             setShowProfileModal(true);
           }
@@ -193,6 +197,7 @@ export function ExpertPortal() {
           department: expertDepartment,
           district: expertDistrict,
           state: expertState,
+          avatar: expertAvatar,
         }),
       });
       const data = await res.json();
@@ -287,9 +292,14 @@ export function ExpertPortal() {
         <header className="flex flex-wrap items-center justify-between border-b border-[#eaf0ed] dark:border-white/10 pb-4 mb-4 gap-4">
           <div className="flex items-center gap-3 sm:gap-5 flex-wrap">
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-[#214e34] text-white flex items-center justify-center shadow-xs">
-                <AppIcon name="psychology" className="w-5 h-5" />
-              </div>
+              <img
+                src="/logo.png"
+                alt="KisanLoop"
+                className="w-10 h-10 object-contain rounded-xl shadow-xs shrink-0"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-lg font-black text-[#111814] dark:text-white tracking-tight">KisanLoop</h1>
@@ -408,10 +418,11 @@ export function ExpertPortal() {
                   {expertDepartment}
                 </span>
               </div>
-              <img
-                src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=120&q=80"
-                alt={expertName}
-                className="w-9 h-9 rounded-full object-cover border border-[#214e34] shadow-xs"
+              <ProfileAvatar
+                avatar={expertAvatar}
+                role="EXPERT"
+                name={expertName}
+                size="sm"
               />
             </div>
 
@@ -495,18 +506,26 @@ export function ExpertPortal() {
             <div className="p-6 rounded-3xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
               <div className="flex items-center gap-4">
                 <div className="relative">
-                  <img
-                    src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=240&q=80"
-                    alt={expertName}
-                    className="w-20 h-20 rounded-2xl object-cover border-2 border-[#214e34] shadow-md"
+                  <ProfileAvatar
+                    avatar={expertAvatar}
+                    role="EXPERT"
+                    name={expertName}
+                    size="xl"
+                    showBadge={true}
+                    onClick={() => setShowAvatarModal(true)}
                   />
-                  <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs shadow-xs" title="Verified ICAR Specialist">
-                    <AppIcon name="verified" className="w-3.5 h-3.5" />
-                  </span>
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-xl font-black text-[#111814] dark:text-white">{expertName}</h2>
+                    <button
+                      type="button"
+                      onClick={() => setShowAvatarModal(true)}
+                      className="text-xs text-emerald-700 dark:text-emerald-400 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <AppIcon name="photo_camera" className="w-3.5 h-3.5" />
+                      <span>Change Icon / Avatar</span>
+                    </button>
                     <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider">
                       Active ICAR Triage Lead
                     </span>
@@ -1604,11 +1623,41 @@ export function ExpertPortal() {
           role: userRole,
           designation: expertDesignation,
           department: expertDepartment,
+          avatar: expertAvatar,
         }}
         onSaved={(data) => {
           if (data?.user?.name) setExpertName(data.user.name);
           if (data?.user?.role) setUserRole(data.user.role);
           if (data?.user?.designation) setExpertDesignation(data.user.designation);
+          if (data?.user?.avatar) setExpertAvatar(data.user.avatar);
+        }}
+      />
+
+      {/* Profile Avatar / Icon Studio Modal */}
+      <ProfileAvatarPickerModal
+        isOpen={showAvatarModal}
+        onClose={() => setShowAvatarModal(false)}
+        currentAvatar={expertAvatar}
+        role="EXPERT"
+        userName={expertName}
+        onSelectAvatar={(newAvatar) => {
+          setExpertAvatar(newAvatar);
+          // Persist to backend
+          fetch("/api/auth/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              role: "EXPERT",
+              name: expertName,
+              phone: expertPhone,
+              designation: expertDesignation,
+              department: expertDepartment,
+              district: expertDistrict,
+              state: expertState,
+              avatar: newAvatar,
+            }),
+          }).catch(console.error);
+          triggerToast("Avatar Updated", "Expert profile icon/avatar updated.", "verified");
         }}
       />
     </div>

@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { useClerk } from "@clerk/nextjs";
 import AppIcon from "@/components/shared/AppIcon";
 import { ProfileSetupModal } from "@/components/shared/ProfileSetupModal";
+import { ProfileAvatar, ProfileAvatarPickerModal } from "@/components/shared/ProfileAvatarPicker";
 import { useAppLogout } from "@/lib/auth/useAppLogout";
 
 const FarmerChat = dynamic(
@@ -88,9 +89,8 @@ export function FarmerPortal() {
   const [showProfileSetupModal, setShowProfileSetupModal] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileSavedToast, setProfileSavedToast] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState(
-    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
-  );
+  const [avatarUrl, setAvatarUrl] = useState("icon:sprout");
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const { logout: handleLogout } = useAppLogout();
@@ -111,6 +111,7 @@ export function FarmerPortal() {
           state: "Jharkhand",
           farmName: farmTitle,
           acres: parseFloat(acres) || 1.2,
+          avatar: avatarUrl,
         }),
       });
       const json = await res.json();
@@ -142,6 +143,7 @@ export function FarmerPortal() {
 
           if (u.role) setUserRole(u.role);
           if (u.name) setFarmerName(u.name);
+          if (u.avatar) setAvatarUrl(u.avatar);
           if (farmer?.phone) setPhone(farmer.phone);
           if (farmer?.village) setVillage(`${farmer.village}, ${farmer.district || "Ranchi"}`);
           else if (u.district) setVillage(u.district);
@@ -512,9 +514,14 @@ export function FarmerPortal() {
           {/* App Header & Brand */}
           <div className="h-20 px-5 flex items-center justify-between border-b border-[#ebeae2]">
             <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentTab("today")}>
-              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-sm">
-                <AppIcon name="eco" className="w-6 h-6" />
-              </div>
+              <img
+                src="/logo.png"
+                alt="KisanLoop"
+                className="w-10 h-10 object-contain rounded-xl shadow-xs shrink-0"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
               <div className="flex flex-col">
                 <span className="font-display font-extrabold text-lg text-charcoal leading-tight tracking-tight">
                   Kisan<span className="text-[#214E34]">LOOP</span>
@@ -699,13 +706,11 @@ export function FarmerPortal() {
             className="flex items-center gap-3 p-2.5 bg-[#F6F5EF] rounded-xl hover:bg-emerald-50 cursor-pointer transition-colors group"
             onClick={() => setCurrentTab("profile")}
           >
-            <img
-              alt={farmerName}
-              className="w-10 h-10 rounded-full object-cover border-2 border-primary shadow-xs shrink-0"
-              src={avatarUrl}
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80";
-              }}
+            <ProfileAvatar
+              avatar={avatarUrl}
+              role="FARMER"
+              name={farmerName}
+              size="md"
             />
             <div className="flex flex-col min-w-0 flex-1">
               <span className="text-xs font-bold text-charcoal truncate group-hover:text-primary">
@@ -738,9 +743,14 @@ export function FarmerPortal() {
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             {/* Mobile Brand Logo */}
             <div className="lg:hidden flex items-center gap-2 cursor-pointer shrink-0" onClick={() => setCurrentTab("today")}>
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-white shadow-xs">
-                <AppIcon name="eco" className="w-5 h-5" />
-              </div>
+              <img
+                src="/logo.png"
+                alt="KisanLoop"
+                className="w-8 h-8 object-contain rounded-lg shadow-xs shrink-0"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
               <span className="font-display font-extrabold text-base text-charcoal leading-none">
                 Kisan<span className="text-[#214E34]">LOOP</span>
               </span>
@@ -797,14 +807,14 @@ export function FarmerPortal() {
               <section className="relative rounded-20px overflow-hidden shadow-sm border border-[#e8e7de] bg-white">
                 <div className="relative min-h-[19rem] sm:min-h-[18rem] sm:h-72 w-full overflow-hidden">
                   <img
-                    alt="Lush green paddy fields in Namkum, Ranchi"
-                    className="w-full h-full object-cover object-[center_35%] scale-105 transition-transform duration-700"
-                    src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=85"
+                    alt="Indian farmer in lush green paddy fields in Namkum, Ranchi"
+                    className="w-full h-full object-cover object-[center_30%] scale-105 transition-transform duration-700"
+                    src="https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=1920&q=85"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=1600&q=85";
+                      (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?auto=format&fit=crop&w=1920&q=85";
                     }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#072315]/95 via-[#072315]/50 to-black/20"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#072315]/95 via-[#072315]/45 to-black/25"></div>
                   <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-7 lg:p-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4 text-white">
                     <div className="space-y-1.5 drop-shadow-sm">
                       <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/30 backdrop-blur-md border border-white/25 text-xs font-semibold text-white">
@@ -1715,18 +1725,26 @@ export function FarmerPortal() {
                 {/* Profile Card */}
                 <div className="bg-white rounded-2xl p-4 sm:p-6 border border-[#e8e7de] shadow-sm flex flex-col items-center text-center space-y-4">
                   <div className="relative">
-                    <img
-                      alt={farmerName}
-                      className="w-28 h-28 rounded-full object-cover border-4 border-primary shadow-md"
-                      src={avatarUrl}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80";
-                      }}
+                    <ProfileAvatar
+                      avatar={avatarUrl}
+                      role="FARMER"
+                      name={farmerName}
+                      size="2xl"
+                      showBadge={true}
+                      onClick={() => setShowAvatarModal(true)}
                     />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-charcoal">{farmerName}</h3>
                     <p className="text-xs text-secondary">{village}</p>
+                    <button
+                      type="button"
+                      onClick={() => setShowAvatarModal(true)}
+                      className="mt-2 text-xs text-primary font-bold hover:underline flex items-center justify-center gap-1 mx-auto cursor-pointer"
+                    >
+                      <AppIcon name="photo_camera" className="w-3.5 h-3.5" />
+                      <span>Change Profile Icon / Avatar</span>
+                    </button>
                   </div>
                   <div className="w-full grid grid-cols-2 gap-2 pt-2 border-t border-[#ebeae2]">
                     <div className="p-2.5 bg-[#F6F5EF] rounded-xl">
@@ -2385,15 +2403,45 @@ export function FarmerPortal() {
           farmName: farmTitle,
           acres,
           role: userRole,
+          avatar: avatarUrl,
         }}
         onSaved={(data) => {
           if (data?.user?.name) setFarmerName(data.user.name);
+          if (data?.user?.avatar) setAvatarUrl(data.user.avatar);
           if (data?.farmer?.phone) setPhone(data.farmer.phone);
           if (data?.farmer?.village) setVillage(data.farmer.village);
           if (data?.farm?.name) setFarmTitle(data.farm.name);
           if (data?.farm?.totalAreaAcres) setAcres(`${data.farm.totalAreaAcres} Acres`);
           if (data?.user?.role) setUserRole(data.user.role);
           fetchData();
+        }}
+      />
+
+      {/* 7. AVATAR / ICON STUDIO MODAL */}
+      <ProfileAvatarPickerModal
+        isOpen={showAvatarModal}
+        onClose={() => setShowAvatarModal(false)}
+        currentAvatar={avatarUrl}
+        role="FARMER"
+        userName={farmerName}
+        onSelectAvatar={(newAvatar) => {
+          setAvatarUrl(newAvatar);
+          // Save updated avatar to backend
+          fetch("/api/auth/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              role: "FARMER",
+              name: farmerName,
+              phone,
+              village,
+              district: "Ranchi",
+              state: "Jharkhand",
+              farmName: farmTitle,
+              acres: parseFloat(acres) || 1.2,
+              avatar: newAvatar,
+            }),
+          }).catch(console.error);
         }}
       />
     </div>

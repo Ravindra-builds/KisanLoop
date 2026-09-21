@@ -128,17 +128,22 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#f8faf8] dark:bg-[#121814] text-[#111814] dark:text-zinc-100 font-sans antialiased flex flex-col justify-between selection:bg-emerald-100 dark:selection:bg-emerald-950 overflow-x-hidden w-full">
       {/* Top Header Bar */}
       <header className="w-full bg-white dark:bg-[#18221B] border-b border-[#e5ece7] dark:border-white/10 px-3 sm:px-6 lg:px-10 py-2.5 sm:py-3 flex items-center justify-between shadow-2xs">
-        <Link href="/" className="flex items-center gap-2 sm:gap-2.5">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#eef4ee] dark:bg-[#214E34]/30 border border-[#d2ded5] dark:border-[#214E34] flex items-center justify-center text-[#1b4332] dark:text-emerald-400 shadow-2xs shrink-0">
-            <Sprout className="w-4 h-4 sm:w-5 sm:h-5 text-[#1b4332] dark:text-emerald-400" />
-          </div>
+        <Link href="/" className="flex items-center gap-2.5">
+          <img
+            src="/logo.png"
+            alt="KisanLoop Logo"
+            className="w-12 h-15 sm:w-9 sm:h-9 object-contain rounded-xl shadow-2xs shrink-0"
+            onError={(e) => {
+              (e.target as HTMLElement).style.display = "none";
+            }}
+          />
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
               <span className="font-black text-sm sm:text-base text-[#111814] dark:text-white tracking-tight">
                 KisanLoop
               </span>
               <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#ebf7eb] dark:bg-emerald-950 text-[#1b4332] dark:text-emerald-400 border border-[#d2ded5] dark:border-emerald-800">
-                v2.5
+                v1.5
               </span>
             </div>
             <span className="text-[10px] text-[#608570] dark:text-emerald-400/80 hidden sm:inline font-medium">

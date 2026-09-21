@@ -5,6 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import AppIcon from "@/components/shared/AppIcon";
 import { ProfileSetupModal } from "@/components/shared/ProfileSetupModal";
+import { ProfileAvatar, ProfileAvatarPickerModal } from "@/components/shared/ProfileAvatarPicker";
 import { useAppLogout } from "@/lib/auth/useAppLogout";
 
 const AgriculturalMap = dynamic(() => import("@/components/dashboard/AgriculturalMap"), {
@@ -56,6 +57,8 @@ export function GovernmentDashboard() {
   const [officialSchemes, setOfficialSchemes] = useState("PM-KISAN, NFSM, Soil Health Card, RKVY");
   const [savingProfile, setSavingProfile] = useState(false);
   const [userRole, setUserRole] = useState<"FARMER" | "EXPERT" | "GOVT" | "ADMIN">("GOVT");
+  const [officialAvatar, setOfficialAvatar] = useState("icon:landmark");
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -66,6 +69,7 @@ export function GovernmentDashboard() {
           if (u.name && u.name !== "Farmer") setOfficialName(u.name);
           if (u.email) setOfficialEmail(u.email);
           if (u.role) setUserRole(u.role);
+          if (u.avatar) setOfficialAvatar(u.avatar);
           if (res.data.isProfileComplete === false) {
             setShowProfileModal(true);
           }
@@ -89,6 +93,7 @@ export function GovernmentDashboard() {
           department: officialDepartment,
           district: officialDistrict,
           state: officialState,
+          avatar: officialAvatar,
         }),
       });
       const data = await res.json();
@@ -142,9 +147,14 @@ export function GovernmentDashboard() {
           {/* Brand Header */}
           <div className="h-16 px-5 border-b border-[#e5ece7] dark:border-white/10 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-[#05371f] text-white flex items-center justify-center font-black text-sm shadow-xs">
-                KL
-              </div>
+              <img
+                src="/logo.png"
+                alt="KisanLoop"
+                className="w-9 h-9 object-contain rounded-xl shadow-xs shrink-0"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
               <div className="flex flex-col">
                 <span className="font-black text-base text-[#05371f] dark:text-emerald-400 tracking-tight leading-none">
                   KisanLoop
@@ -371,6 +381,24 @@ export function GovernmentDashboard() {
               <span className="hidden sm:inline">Export District Brief</span>
               <span className="sm:hidden">Brief</span>
             </button>
+
+            {/* Official Profile Avatar Button */}
+            <div
+              onClick={() => setActiveModule("profile")}
+              className="flex items-center gap-2 pl-2 border-l border-[#eaf0ed] dark:border-white/10 cursor-pointer hover:opacity-85 transition"
+              title="View & Edit Official Profile"
+            >
+              <div className="hidden sm:flex flex-col text-right">
+                <span className="text-xs font-bold text-[#141e17] dark:text-white leading-tight">{officialName}</span>
+                <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">{officialDesignation}</span>
+              </div>
+              <ProfileAvatar
+                avatar={officialAvatar}
+                role="GOVT"
+                name={officialName}
+                size="sm"
+              />
+            </div>
 
             {/* Quick Header Logout Button */}
             <button
@@ -820,22 +848,26 @@ export function GovernmentDashboard() {
               <div className="p-6 rounded-3xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
                   <div className="relative">
-                    <div className="w-20 h-20 rounded-2xl bg-[#05371f] text-white flex items-center justify-center font-black text-2xl shadow-md border-2 border-emerald-500/40">
-                      {officialName
-                        .split(" ")
-                        .filter(Boolean)
-                        .map((n) => n[0])
-                        .slice(0, 2)
-                        .join("")
-                        .toUpperCase() || "GO"}
-                    </div>
-                    <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs shadow-xs" title="Verified Gazetted Officer">
-                      <AppIcon name="verified" className="w-3.5 h-3.5" />
-                    </span>
+                    <ProfileAvatar
+                      avatar={officialAvatar}
+                      role="GOVT"
+                      name={officialName}
+                      size="xl"
+                      showBadge={true}
+                      onClick={() => setShowAvatarModal(true)}
+                    />
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h2 className="text-xl font-black text-[#141e17] dark:text-white">{officialName}</h2>
+                      <button
+                        type="button"
+                        onClick={() => setShowAvatarModal(true)}
+                        className="text-xs text-emerald-700 dark:text-emerald-400 font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <AppIcon name="photo_camera" className="w-3.5 h-3.5" />
+                        <span>Change Icon / Avatar</span>
+                      </button>
                       <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider">
                         Authorized Gazetted Officer (Class-I)
                       </span>
@@ -1234,11 +1266,41 @@ export function GovernmentDashboard() {
           role: userRole,
           designation: officialDesignation,
           department: officialDepartment,
+          avatar: officialAvatar,
         }}
         onSaved={(data) => {
           if (data?.user?.name) setOfficialName(data.user.name);
           if (data?.user?.role) setUserRole(data.user.role);
           if (data?.user?.designation) setOfficialDesignation(data.user.designation);
+          if (data?.user?.avatar) setOfficialAvatar(data.user.avatar);
+        }}
+      />
+
+      {/* Profile Avatar / Icon Studio Modal */}
+      <ProfileAvatarPickerModal
+        isOpen={showAvatarModal}
+        onClose={() => setShowAvatarModal(false)}
+        currentAvatar={officialAvatar}
+        role="GOVT"
+        userName={officialName}
+        onSelectAvatar={(newAvatar) => {
+          setOfficialAvatar(newAvatar);
+          // Persist to backend
+          fetch("/api/auth/profile", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              role: "GOVT",
+              name: officialName,
+              phone: officialPhone,
+              designation: officialDesignation,
+              department: officialDepartment,
+              district: officialDistrict,
+              state: officialState,
+              avatar: newAvatar,
+            }),
+          }).catch(console.error);
+          triggerToast("Avatar Updated", "Official profile icon/avatar updated.", "verified");
         }}
       />
     </div>

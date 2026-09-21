@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
     let email = "";
     let clerkId = "";
     let defaultName = "";
+    let avatar = "";
 
     // 1. Check Clerk
     try {
@@ -19,6 +20,7 @@ export async function GET(req: NextRequest) {
       if (clerkUser) {
         email = clerkUser.emailAddresses?.[0]?.emailAddress?.toLowerCase() || "";
         clerkId = clerkUser.id;
+        avatar = (clerkUser.publicMetadata?.avatar as string) || clerkUser.imageUrl || "";
         defaultName =
           `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() ||
           clerkUser.username ||
@@ -36,6 +38,7 @@ export async function GET(req: NextRequest) {
           email = decoded.email || "";
           defaultName = decoded.name || "";
           clerkId = decoded.id || "";
+          if (decoded.avatar) avatar = decoded.avatar;
         } catch {}
       }
     }
@@ -82,6 +85,7 @@ export async function GET(req: NextRequest) {
           name: dbUser?.name || defaultName,
           role: dbUser?.role || "FARMER",
           preferredLanguage: dbUser?.preferredLanguage || "en",
+          avatar: avatar || undefined,
         },
         farmer: farmerRec || {
           name: defaultName,
@@ -123,6 +127,7 @@ export async function POST(req: NextRequest) {
       soilType = "Loamy",
       designation = "",
       department = "",
+      avatar = "",
     } = body;
 
     let email = "";
@@ -266,6 +271,7 @@ export async function POST(req: NextRequest) {
             role: cleanRole,
             designation,
             department,
+            avatar,
           },
         });
       } catch (clerkErr) {
@@ -282,6 +288,7 @@ export async function POST(req: NextRequest) {
       preferredLanguage: "en",
       district: `${district}, ${state}`,
       farmId: cleanRole === "FARMER" ? targetFarmId : undefined,
+      avatar: avatar || undefined,
     };
 
     const res = NextResponse.json({
@@ -325,4 +332,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

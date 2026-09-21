@@ -2,6 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import AppIcon from "@/components/shared/AppIcon";
+import {
+  ProfileAvatar,
+  ProfileAvatarPickerModal,
+  RoleType,
+} from "@/components/shared/ProfileAvatarPicker";
+import { Sparkles, Camera } from "lucide-react";
 
 interface ProfileSetupModalProps {
   isOpen: boolean;
@@ -19,6 +25,7 @@ interface ProfileSetupModalProps {
     soilType?: string;
     designation?: string;
     department?: string;
+    avatar?: string;
   };
   onSaved?: (updatedData: any) => void;
 }
@@ -29,12 +36,14 @@ export function ProfileSetupModal({
   initialData,
   onSaved,
 }: ProfileSetupModalProps) {
-  const [selectedRole, setSelectedRole] = useState<"FARMER" | "EXPERT" | "GOVT" | "ADMIN">("FARMER");
+  const [selectedRole, setSelectedRole] = useState<RoleType>("FARMER");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [state, setState] = useState("Jharkhand");
   const [district, setDistrict] = useState("Ranchi");
   const [village, setVillage] = useState("Namkum");
+  const [avatar, setAvatar] = useState("icon:sprout");
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
   // Farmer specific
   const [farmName, setFarmName] = useState("");
@@ -63,8 +72,23 @@ export function ProfileSetupModal({
       if (initialData.soilType) setSoilType(initialData.soilType);
       if (initialData.designation) setDesignation(initialData.designation);
       if (initialData.department) setDepartment(initialData.department);
+      if (initialData.avatar) setAvatar(initialData.avatar);
     }
   }, [initialData]);
+
+  // Adjust default avatar when switching roles if it's currently on a default icon
+  const handleRoleChange = (role: RoleType) => {
+    setSelectedRole(role);
+    if (!avatar || avatar.startsWith("icon:")) {
+      const defaultIconMap: Record<RoleType, string> = {
+        FARMER: "icon:sprout",
+        EXPERT: "icon:microscope",
+        GOVT: "icon:landmark",
+        ADMIN: "icon:shield",
+      };
+      setAvatar(defaultIconMap[role]);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -95,6 +119,7 @@ export function ProfileSetupModal({
           soilType,
           designation: designation.trim(),
           department: department.trim(),
+          avatar: avatar.trim(),
         }),
       });
 
@@ -164,263 +189,323 @@ export function ProfileSetupModal({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-[#18221B] rounded-3xl border border-[#d2ded5] dark:border-white/10 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 space-y-6">
-        <div className="flex items-start justify-between border-b border-[#e2ebe4] dark:border-white/10 pb-4">
-          <div>
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#1b4332] dark:text-emerald-400">
-              Identity &amp; Role Configuration / प्रोफ़ाइल सेटअप
-            </span>
-            <h2 className="text-xl sm:text-2xl font-black text-[#111814] dark:text-white mt-1">
-              Complete Your KisanLoop Profile
-            </h2>
-            <p className="text-xs text-[#608570] dark:text-zinc-400 mt-1">
-              Choose your role and enter plot/institutional data for personalized intelligence.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
-          >
-            <AppIcon name="close" className="w-5 h-5" />
-          </button>
-        </div>
-
-        {errorMsg && (
-          <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-semibold">
-            {errorMsg}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Role Selector Cards */}
-          <div>
-            <label className="block text-xs font-bold text-[#141e17] dark:text-white mb-2">
-              Select Your Role in the Platform (अपनी भूमिका चुनें)
-            </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {ROLES.map((r) => (
-                <div
-                  key={r.id}
-                  onClick={() => setSelectedRole(r.id)}
-                  className={`p-3.5 rounded-2xl border-2 cursor-pointer transition flex items-start gap-3 ${
-                    selectedRole === r.id
-                      ? r.activeBorder
-                      : "border-[#e2ebe4] dark:border-white/10 hover:border-slate-300 bg-white dark:bg-zinc-900"
-                  }`}
-                >
-                  <div className="p-2 rounded-xl bg-[#ebf7eb] dark:bg-emerald-950/50 text-[#1b4332] dark:text-emerald-400 shrink-0">
-                    <AppIcon name={r.icon} className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-black text-[#141e17] dark:text-white">{r.title}</div>
-                    <div className="text-[11px] text-[#608570] dark:text-zinc-400 mt-0.5 leading-tight">{r.desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Common Details */}
-          <div className="space-y-4 pt-2 border-t border-[#e2ebe4] dark:border-white/10">
-            <h4 className="text-xs font-bold text-[#141e17] dark:text-white uppercase tracking-wider">
-              Personal Information (व्यक्तिगत विवरण)
-            </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+        <div className="bg-white dark:bg-[#18221B] rounded-3xl border border-[#d2ded5] dark:border-white/10 shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 space-y-6">
+          <div className="flex items-start justify-between border-b border-[#e2ebe4] dark:border-white/10 pb-4">
+            <div className="flex items-center gap-3">
+              <img
+                src="/logo.png"
+                alt="KisanLoop"
+                className="w-10 h-10 object-contain rounded-xl shadow-xs shrink-0"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = "none";
+                }}
+              />
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  Full Name (पूरा नाम) *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Ramesh Chandra"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 bg-[#f8faf8] dark:bg-zinc-800 text-sm font-semibold text-[#111814] dark:text-white focus:outline-emerald-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  Phone Number (मोबाइल नंबर) {selectedRole === "FARMER" ? "*" : ""}
-                </label>
-                <input
-                  type="tel"
-                  required={selectedRole === "FARMER"}
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+91 98321 44520"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 bg-[#f8faf8] dark:bg-zinc-800 text-sm font-semibold text-[#111814] dark:text-white focus:outline-emerald-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  State (राज्य)
-                </label>
-                <input
-                  type="text"
-                  value={state}
-                  onChange={(e) => setState(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 bg-[#f8faf8] dark:bg-zinc-800 text-sm font-semibold text-[#111814] dark:text-white focus:outline-emerald-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                  District (जिला)
-                </label>
-                <input
-                  type="text"
-                  value={district}
-                  onChange={(e) => setDistrict(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 bg-[#f8faf8] dark:bg-zinc-800 text-sm font-semibold text-[#111814] dark:text-white focus:outline-emerald-600"
-                />
+                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-[#1b4332] dark:text-emerald-400">
+                  Identity &amp; Role Configuration / प्रोफ़ाइल सेटअप
+                </span>
+                <h2 className="text-xl sm:text-2xl font-black text-[#111814] dark:text-white mt-0.5">
+                  Complete Your KisanLoop Profile
+                </h2>
+                <p className="text-xs text-[#608570] dark:text-zinc-400 mt-0.5">
+                  Choose your role, customize your profile icon/avatar, and enter plot/institutional data.
+                </p>
               </div>
             </div>
-          </div>
-
-          {/* Role-Specific Fields */}
-          {selectedRole === "FARMER" && (
-            <div className="space-y-4 pt-2 border-t border-[#e2ebe4] dark:border-white/10">
-              <h4 className="text-xs font-bold text-[#141e17] dark:text-white uppercase tracking-wider">
-                Farm &amp; Cadastral Land Configuration (खेत विवरण)
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    Village / Panchayat (गाँव / पंचायत)
-                  </label>
-                  <input
-                    type="text"
-                    value={village}
-                    onChange={(e) => setVillage(e.target.value)}
-                    placeholder="e.g. Namkum"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 bg-[#f8faf8] dark:bg-zinc-800 text-sm font-semibold text-[#111814] dark:text-white focus:outline-emerald-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    Farm Name (खेत का नाम)
-                  </label>
-                  <input
-                    type="text"
-                    value={farmName}
-                    onChange={(e) => setFarmName(e.target.value)}
-                    placeholder="e.g. Namkum Field Parcel"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 bg-[#f8faf8] dark:bg-zinc-800 text-sm font-semibold text-[#111814] dark:text-white focus:outline-emerald-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    Total Land Holding (एकड़ में)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0.1"
-                    value={acres}
-                    onChange={(e) => setAcres(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 bg-[#f8faf8] dark:bg-zinc-800 text-sm font-semibold text-[#111814] dark:text-white focus:outline-emerald-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    Irrigation Source (सिंचाई का साधन)
-                  </label>
-                  <select
-                    value={irrigationType}
-                    onChange={(e) => setIrrigationType(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 bg-[#f8faf8] dark:bg-zinc-800 text-sm font-semibold text-[#111814] dark:text-white focus:outline-emerald-600"
-                  >
-                    <option value="Rainfed">Rainfed (वर्षा आधारित)</option>
-                    <option value="Borewell">Borewell (नलकूप / बोरवेल)</option>
-                    <option value="Canal">Canal (नहर / नाला)</option>
-                    <option value="Drip">Drip / Micro-Irrigation (टपक सिंचाई)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {(selectedRole === "EXPERT" || selectedRole === "GOVT" || selectedRole === "ADMIN") && (
-            <div className="space-y-4 pt-2 border-t border-[#e2ebe4] dark:border-white/10">
-              <h4 className="text-xs font-bold text-[#141e17] dark:text-white uppercase tracking-wider">
-                Institutional Details (संस्थान व पद विवरण)
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    Designation / Title (पदनाम)
-                  </label>
-                  <input
-                    type="text"
-                    value={designation}
-                    onChange={(e) => setDesignation(e.target.value)}
-                    placeholder={
-                      selectedRole === "EXPERT"
-                        ? "e.g. Senior Agronomist / Plant Pathologist"
-                        : "e.g. District Agriculture Officer"
-                    }
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 bg-[#f8faf8] dark:bg-zinc-800 text-sm font-semibold text-[#111814] dark:text-white focus:outline-emerald-600"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
-                    Department / Institution (विभाग / संस्थान)
-                  </label>
-                  <input
-                    type="text"
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    placeholder={
-                      selectedRole === "EXPERT"
-                        ? "e.g. KVK Ranchi / BAU Kanke"
-                        : "e.g. Directorate of Agriculture, Jharkhand"
-                    }
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 bg-[#f8faf8] dark:bg-zinc-800 text-sm font-semibold text-[#111814] dark:text-white focus:outline-emerald-600"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Action Footer */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#e2ebe4] dark:border-white/10">
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 text-xs font-bold text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-zinc-800 transition"
             >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-6 py-2.5 rounded-xl bg-[#1b4332] hover:bg-[#2d6a4f] text-white text-xs font-bold transition flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
-            >
-              {saving ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Saving to Neon DB...</span>
-                </>
-              ) : (
-                <>
-                  <AppIcon name="check" className="w-4 h-4" />
-                  <span>Save &amp; Enter {selectedRole === "FARMER" ? "Farmer Portal" : selectedRole === "EXPERT" ? "Expert Console" : selectedRole === "GOVT" ? "Govt Dashboard" : "Admin Panel"}</span>
-                </>
-              )}
+              <AppIcon name="close" className="w-5 h-5" />
             </button>
           </div>
-        </form>
+
+          {errorMsg && (
+            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-semibold">
+              {errorMsg}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Avatar & Icon Selection Banner */}
+            <div className="p-4 rounded-2xl bg-[#f8faf8] dark:bg-zinc-900 border border-[#e2ebe4] dark:border-white/10 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <ProfileAvatar
+                  avatar={avatar}
+                  role={selectedRole}
+                  name={name || "User"}
+                  size="xl"
+                  showBadge={true}
+                  onClick={() => setShowAvatarPicker(true)}
+                />
+                <div>
+                  <div className="text-xs font-bold text-slate-500 dark:text-zinc-400 uppercase tracking-wider">
+                    Profile Icon / Avatar
+                  </div>
+                  <div className="text-sm font-extrabold text-[#111814] dark:text-white mt-0.5">
+                    {name || "KisanLoop Member"}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowAvatarPicker(true)}
+                    className="text-xs text-emerald-700 dark:text-emerald-400 font-bold hover:underline flex items-center gap-1 mt-1 cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Change Profile Icon / Avatar</span>
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowAvatarPicker(true)}
+                className="px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-800 border border-[#d2ded5] dark:border-white/10 hover:bg-slate-50 dark:hover:bg-zinc-700 text-xs font-bold text-slate-700 dark:text-zinc-200 transition shadow-xs flex items-center gap-1.5 cursor-pointer shrink-0"
+              >
+                <Camera className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="hidden sm:inline">Choose Avatar</span>
+              </button>
+            </div>
+
+            {/* Role Selector Cards */}
+            <div>
+              <label className="block text-xs font-bold text-[#141e17] dark:text-white mb-2">
+                Select Your Role in the Platform (अपनी भूमिका चुनें)
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {ROLES.map((r) => (
+                  <div
+                    key={r.id}
+                    onClick={() => handleRoleChange(r.id)}
+                    className={`p-3.5 rounded-2xl border-2 cursor-pointer transition flex items-start gap-3 ${
+                      selectedRole === r.id
+                        ? r.activeBorder
+                        : "border-[#e2ebe4] dark:border-white/10 hover:border-slate-300 bg-white dark:bg-zinc-900"
+                    }`}
+                  >
+                    <div className="p-2 rounded-xl bg-[#ebf7eb] dark:bg-emerald-950/50 text-[#1b4332] dark:text-emerald-400 shrink-0">
+                      <AppIcon name={r.icon} className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-black text-[#141e17] dark:text-white">{r.title}</div>
+                      <div className="text-[11px] text-[#608570] dark:text-zinc-400 mt-0.5 leading-tight">{r.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Common Details */}
+            <div className="space-y-4 pt-2 border-t border-[#e2ebe4] dark:border-white/10">
+              <h4 className="text-xs font-bold text-[#141e17] dark:text-white uppercase tracking-wider">
+                Personal Information (व्यक्तिगत विवरण)
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                    Full Name (पूरा नाम) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g. Ramesh Chandra"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 bg-[#f8faf8] dark:bg-zinc-800 text-sm font-semibold text-[#111814] dark:text-white focus:outline-emerald-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                    Phone Number (मोबाइल नंबर) {selectedRole === "FARMER" ? "*" : ""}
+                  </label>
+                  <input
+                    type="tel"
+                    required={selectedRole === "FARMER"}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+91 98321 44520"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 bg-[#f8faf8] dark:bg-zinc-800 text-sm font-semibold text-[#111814] dark:text-white focus:outline-emerald-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                    State (राज्य)
+                  </label>
+                  <input
+                    type="text"
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 bg-[#f8faf8] dark:bg-zinc-800 text-sm font-semibold text-[#111814] dark:text-white focus:outline-emerald-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                    District (जिला)
+                  </label>
+                  <input
+                    type="text"
+                    value={district}
+                    onChange={(e) => setDistrict(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 bg-[#f8faf8] dark:bg-zinc-800 text-sm font-semibold text-[#111814] dark:text-white focus:outline-emerald-600"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Role-Specific Fields */}
+            {selectedRole === "FARMER" && (
+              <div className="space-y-4 pt-2 border-t border-[#e2ebe4] dark:border-white/10">
+                <h4 className="text-xs font-bold text-[#141e17] dark:text-white uppercase tracking-wider">
+                  Farm &amp; Cadastral Land Configuration (खेत विवरण)
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                      Village / Panchayat (गाँव / पंचायत)
+                    </label>
+                    <input
+                      type="text"
+                      value={village}
+                      onChange={(e) => setVillage(e.target.value)}
+                      placeholder="e.g. Namkum"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 bg-[#f8faf8] dark:bg-zinc-800 text-sm font-semibold text-[#111814] dark:text-white focus:outline-emerald-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                      Farm Name (खेत का नाम)
+                    </label>
+                    <input
+                      type="text"
+                      value={farmName}
+                      onChange={(e) => setFarmName(e.target.value)}
+                      placeholder="e.g. Namkum Field Parcel"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 bg-[#f8faf8] dark:bg-zinc-800 text-sm font-semibold text-[#111814] dark:text-white focus:outline-emerald-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                      Total Land Holding (एकड़ में)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0.1"
+                      value={acres}
+                      onChange={(e) => setAcres(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 bg-[#f8faf8] dark:bg-zinc-800 text-sm font-semibold text-[#111814] dark:text-white focus:outline-emerald-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                      Irrigation Source (सिंचाई का साधन)
+                    </label>
+                    <select
+                      value={irrigationType}
+                      onChange={(e) => setIrrigationType(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 bg-[#f8faf8] dark:bg-zinc-800 text-sm font-semibold text-[#111814] dark:text-white focus:outline-emerald-600"
+                    >
+                      <option value="Rainfed">Rainfed (वर्षा आधारित)</option>
+                      <option value="Borewell">Borewell (नलकूप / बोरवेल)</option>
+                      <option value="Canal">Canal (नहर / नाला)</option>
+                      <option value="Drip">Drip / Micro-Irrigation (टपक सिंचाई)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {(selectedRole === "EXPERT" || selectedRole === "GOVT" || selectedRole === "ADMIN") && (
+              <div className="space-y-4 pt-2 border-t border-[#e2ebe4] dark:border-white/10">
+                <h4 className="text-xs font-bold text-[#141e17] dark:text-white uppercase tracking-wider">
+                  Institutional Details (संस्थान व पद विवरण)
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                      Designation / Title (पदनाम)
+                    </label>
+                    <input
+                      type="text"
+                      value={designation}
+                      onChange={(e) => setDesignation(e.target.value)}
+                      placeholder={
+                        selectedRole === "EXPERT"
+                          ? "e.g. Senior Agronomist / Plant Pathologist"
+                          : "e.g. District Agriculture Officer"
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 bg-[#f8faf8] dark:bg-zinc-800 text-sm font-semibold text-[#111814] dark:text-white focus:outline-emerald-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-zinc-300 mb-1">
+                      Department / Institution (विभाग / संस्थान)
+                    </label>
+                    <input
+                      type="text"
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                      placeholder={
+                        selectedRole === "EXPERT"
+                          ? "e.g. KVK Ranchi / BAU Kanke"
+                          : "e.g. Directorate of Agriculture, Jharkhand"
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 bg-[#f8faf8] dark:bg-zinc-800 text-sm font-semibold text-[#111814] dark:text-white focus:outline-emerald-600"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Action Footer */}
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#e2ebe4] dark:border-white/10">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-5 py-2.5 rounded-xl border border-[#d2ded5] dark:border-white/10 text-xs font-bold text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-zinc-800 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="px-6 py-2.5 rounded-xl bg-[#1b4332] hover:bg-[#2d6a4f] text-white text-xs font-bold transition flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                {saving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Saving to Neon DB...</span>
+                  </>
+                ) : (
+                  <>
+                    <AppIcon name="check" className="w-4 h-4" />
+                    <span>Save &amp; Enter {selectedRole === "FARMER" ? "Farmer Portal" : selectedRole === "EXPERT" ? "Expert Console" : selectedRole === "GOVT" ? "Govt Dashboard" : "Admin Panel"}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+
+      {/* Interactive Avatar / Icon Studio Modal */}
+      <ProfileAvatarPickerModal
+        isOpen={showAvatarPicker}
+        onClose={() => setShowAvatarPicker(false)}
+        currentAvatar={avatar}
+        role={selectedRole}
+        userName={name || "Member"}
+        onSelectAvatar={(newAvatar) => setAvatar(newAvatar)}
+      />
+    </>
   );
 }
-
