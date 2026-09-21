@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { AuthUser } from "@/lib/auth/constants";
+import { useAppLogout } from "@/lib/auth/useAppLogout";
 
 interface UserNavProps {
   accentColor?: "emerald" | "purple" | "blue" | "zinc";
@@ -12,27 +13,7 @@ interface UserNavProps {
 export function UserNav({ accentColor = "emerald" }: UserNavProps) {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
-
-  useEffect(() => {
-    fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((json) => {
-        if (json.success && json.data) {
-          setUser(json.data.user);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-      router.push("/login");
-      router.refresh();
-    } catch (err) {
-      console.error("Logout failed:", err);
-    }
-  };
+  const { logout: handleLogout } = useAppLogout();
 
   const getBadgeColors = () => {
     switch (accentColor) {

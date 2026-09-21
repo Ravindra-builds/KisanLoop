@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { AUTH_COOKIE_NAME, TEST_USERS, AuthUser } from "@/lib/auth/constants";

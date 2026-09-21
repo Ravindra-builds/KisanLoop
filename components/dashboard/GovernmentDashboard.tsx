@@ -5,6 +5,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import AppIcon from "@/components/shared/AppIcon";
 import { ProfileSetupModal } from "@/components/shared/ProfileSetupModal";
+import { useAppLogout } from "@/lib/auth/useAppLogout";
 
 const AgriculturalMap = dynamic(() => import("@/components/dashboard/AgriculturalMap"), {
   ssr: false,
@@ -75,14 +76,7 @@ export function GovernmentDashboard() {
     setTimeout(() => setToast(null), 3800);
   };
 
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } catch (e) {
-      console.error(e);
-    }
-    window.location.href = "/login";
-  };
+  const { logout: handleLogout } = useAppLogout();
 
   const handleExportBrief = () => {
     setExporting(true);

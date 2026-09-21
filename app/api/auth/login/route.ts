@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { TEST_USERS, AUTH_COOKIE_NAME, getDefaultRedirectForRole } from "@/lib/auth/constants";
 

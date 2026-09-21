@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { useClerk } from "@clerk/nextjs";
 import AppIcon from "@/components/shared/AppIcon";
 import { ProfileSetupModal } from "@/components/shared/ProfileSetupModal";
+import { useAppLogout } from "@/lib/auth/useAppLogout";
 
 const FarmerChat = dynamic(
   () => import("@/components/farmer/FarmerChat").then((m) => m.FarmerChat),
@@ -87,26 +88,11 @@ export function FarmerPortal() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileSavedToast, setProfileSavedToast] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(
-    "https://lh3.googleusercontent.com/aida/AEtjO1WFAqqIKiTubYibUh9UUxqk24oM3Z-OIvmhO71n6vuOR4pvf2ViPmo2T3MUtFCMddBxWrnR-KSh2O0JXrOk4spzACNWUfwcAkBxVhhJISdHhSirbcTHkUfIhBH8fA3JWxgstKN-XstdGK65IbyA9i9k-OdlXthKQTFRa2RuwZjkjEqSqiXX-KEwqLJGlxe5YkLKk5IIoJ9ozHkbLyjXECFeZK-T9TOr0nj6npkbOA2Mn1-yzZBep1olRb38"
+    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80"
   );
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const clerk = useClerk();
-
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } catch (err) {
-      console.error("Logout error:", err);
-    }
-    try {
-      if (clerk && clerk.signOut) {
-        await clerk.signOut({ redirectUrl: "/login" });
-        return;
-      }
-    } catch {}
-    window.location.href = "/login";
-  };
+  const { logout: handleLogout } = useAppLogout();
 
   const handleSaveProfile = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -644,6 +630,9 @@ export function FarmerPortal() {
               alt={farmerName}
               className="w-10 h-10 rounded-full object-cover border-2 border-primary shadow-xs shrink-0"
               src={avatarUrl}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80";
+              }}
             />
             <div className="flex flex-col min-w-0 flex-1">
               <span className="text-xs font-bold text-charcoal truncate group-hover:text-primary">
@@ -748,7 +737,10 @@ export function FarmerPortal() {
                   <img
                     alt="Farmer Ravi Kumar in field"
                     className="w-full h-full object-cover object-[center_28%]"
-                    src="https://lh3.googleusercontent.com/aida/AEtjO1WfL7Zww8bvMK1Aop_QT-JiLbWI1qR6kIopujRtc1gm9onr9Kqt6NYx15o3uZTsY89uKYyztPfjWUgvEvu9RVl6W1wRUWMkXfEwXVIO-C_UFvGXFP0_d8qIEb8LmqjIReVHTZ9g04fnBDGlWdOtf8QTGxTqTeF4s-pYxHyfDiQ6SrZELPlo1A0zHoD3GeTpC543ZMC4zLJuL0II22NJLzLpgVeFpljBd0zI8iP9WGTMAcDV5vkZpor_3nY"
+                    src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1400&q=80"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=1200&q=80";
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-primary/95 via-primary/60 to-transparent"></div>
                   <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-7 lg:p-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4 text-white">
@@ -894,7 +886,10 @@ export function FarmerPortal() {
                       <img
                         alt="Reference leaf inspection"
                         className="w-full h-full object-cover"
-                        src="https://lh3.googleusercontent.com/aida/AEtjO1Us1ru4tW37fvhuqgiHCUO9Og03ODst7uRJaazm98F7MxkyzxJAmeNloGo7ATX1pTB4siz_2t0ajzABRNuD7YnYMJAjNWnBO2dHvDFlnA9ROrOw0vCB32QpFrvNkL49o1I_k7jsfyh6L87xeQrmnMZbBj8Bq15qjGTalzf7jSfVT6qdCHy0GiiyrXn_yu3eUq9GgmJv-6xO1qRwcEfEeekdaczbEV1aghCqx9MqEkoElrLAkTPiIXFGYBA"
+                        src="https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?auto=format&fit=crop&w=600&q=80"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=600&q=80";
+                        }}
                       />
                       <div className="absolute bottom-2 left-2 right-2 bg-black/75 backdrop-blur-sm text-white px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5">
                         <AppIcon name="search" className="w-4 h-4  text-amber-300" />
@@ -1501,6 +1496,9 @@ export function FarmerPortal() {
                       alt={farmerName}
                       className="w-28 h-28 rounded-full object-cover border-4 border-primary shadow-md"
                       src={avatarUrl}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80";
+                      }}
                     />
                   </div>
                   <div>

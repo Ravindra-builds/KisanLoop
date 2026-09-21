@@ -34,14 +34,17 @@ export default clerkMiddleware(async (auth, request) => {
     }
   }
 
+  const selectedRoleCookie = request.cookies.get("kisanloop_selected_role")?.value?.toUpperCase();
+  const effectiveRole = customUser?.role || selectedRoleCookie || "FARMER";
+
   const isAuthenticated = Boolean(userId || customUser);
 
-  // If already logged in and visiting /login or /signup, redirect to home
+  // If already logged in and visiting /login or /signup, redirect to respective role workspace
   if (isAuthenticated && (pathname === "/login" || pathname === "/signup")) {
     let target = "/";
-    if (customUser?.role === "EXPERT") target = "/expert";
-    if (customUser?.role === "GOVT") target = "/dashboard";
-    if (customUser?.role === "ADMIN") target = "/admin";
+    if (effectiveRole === "EXPERT") target = "/expert";
+    else if (effectiveRole === "GOVT") target = "/dashboard";
+    else if (effectiveRole === "ADMIN") target = "/admin";
     return NextResponse.redirect(new URL(target, request.url));
   }
 
@@ -57,27 +60,6 @@ export default clerkMiddleware(async (auth, request) => {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Role territory protection for custom session user
-  if (customUser) {
-    if (customUser.role === "FARMER") {
-      if (
-        pathname.startsWith("/expert") ||
-        pathname.startsWith("/dashboard") ||
-        pathname.startsWith("/admin")
-      ) {
-        return NextResponse.redirect(new URL("/", request.url));
-      }
-    } else if (customUser.role === "EXPERT") {
-      if (pathname === "/" || pathname.startsWith("/dashboard") || pathname.startsWith("/admin")) {
-        return NextResponse.redirect(new URL("/expert", request.url));
-      }
-    } else if (customUser.role === "GOVT") {
-      if (pathname === "/" || pathname.startsWith("/expert") || pathname.startsWith("/admin")) {
-        return NextResponse.redirect(new URL("/dashboard", request.url));
-      }
-    }
-  }
-
   return NextResponse.next();
 });
 
@@ -89,4 +71,3 @@ export const config = {
     "/(api|trpc)(.*)",
   ],
 };
-

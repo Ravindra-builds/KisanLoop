@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import AppIcon from "@/components/shared/AppIcon";
 import { ProfileSetupModal } from "@/components/shared/ProfileSetupModal";
+import { useAppLogout } from "@/lib/auth/useAppLogout";
 
 interface CaseItem {
   id: string;
@@ -165,14 +166,7 @@ export function ExpertPortal() {
     setTimeout(() => setToast(null), 3800);
   };
 
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } catch (e) {
-      console.error(e);
-    }
-    window.location.href = "/login";
-  };
+  const { logout: handleLogout } = useAppLogout();
 
   const syncOfflineCache = () => {
     setSyncingOffline(true);
@@ -620,6 +614,9 @@ export function ExpertPortal() {
                           src={c.imageUrl}
                           alt={c.suspectedPathogen}
                           className="w-14 h-14 rounded-xl object-cover border border-[#dce6dc] dark:border-white/10 shrink-0"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=400&q=80";
+                          }}
                         />
                         <div className="min-w-0 flex-1">
                           <div className="font-bold text-xs text-[#111814] dark:text-white truncate">
@@ -705,6 +702,9 @@ export function ExpertPortal() {
                       src={imageMode === "rgb" ? selectedCase.imageUrl : selectedCase.ndviImageUrl}
                       alt="Crop specimen"
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=800&q=80";
+                      }}
                     />
                     <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 px-2 py-1 rounded-md bg-black/60 backdrop-blur text-white text-[10px] font-bold uppercase">
                       <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>

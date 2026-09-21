@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import AppIcon from "@/components/shared/AppIcon";
 import { ProfileSetupModal } from "@/components/shared/ProfileSetupModal";
+import { useAppLogout } from "@/lib/auth/useAppLogout";
 
 interface DocItem {
   id: string;
@@ -100,14 +101,7 @@ export function AdminPortal() {
     setTimeout(() => setToast(null), 3800);
   };
 
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } catch (e) {
-      console.error(e);
-    }
-    window.location.href = "/login";
-  };
+  const { logout: handleLogout } = useAppLogout();
 
   // Upload simulated / API upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

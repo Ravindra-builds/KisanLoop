@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { visionProvider } from "@/lib/providers/vision";
 import { recommendationService } from "@/lib/services/recommendation.service";
