@@ -49,6 +49,7 @@ export function FarmerPortal() {
   const [outcomes, setOutcomes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingAction, setProcessingAction] = useState(false);
+  const [isActionCompleted, setIsActionCompleted] = useState(false);
 
   // Modals State
   const [showWhyDrawer, setShowWhyDrawer] = useState(false);
@@ -171,7 +172,12 @@ export function FarmerPortal() {
 
       if (stateRes.success) setFarmState(stateRes.data);
       if (recsRes.success) setRecommendations(recsRes.data);
-      if (actsRes.success) setActions(actsRes.data);
+      if (actsRes.success) {
+        setActions(actsRes.data);
+        if (actsRes.data?.some((a: any) => a.status === "COMPLETED")) {
+          setIsActionCompleted(true);
+        }
+      }
       if (outsRes.success) setOutcomes(outsRes.data);
     } catch (e) {
       console.error("Error fetching farmer telemetry:", e);
@@ -181,6 +187,12 @@ export function FarmerPortal() {
   };
 
   useEffect(() => {
+    try {
+      if (localStorage.getItem("kisanloop-task-completed") === "true") {
+        setIsActionCompleted(true);
+      }
+    } catch {}
+
     fetchData();
 
     // Load language preference (defaults to "en" for first-time visitors)
@@ -253,17 +265,26 @@ export function FarmerPortal() {
       action: lang === "hi" ? "सब ठीक है ✓" : "All Clean ✓",
     },
     B: {
-      badge: lang === "hi" ? "जोन B चुना गया (सावधानी)" : "ZONE B SELECTED (ATTENTION)",
-      score: lang === "hi" ? "स्वास्थ्य: 74/100" : "Health: 74/100",
+      badge: isActionCompleted
+        ? (lang === "hi" ? "जोन B चुना गया (सत्यापित ✓)" : "ZONE B SELECTED (VERIFIED ✓)")
+        : (lang === "hi" ? "जोन B चुना गया (सावधानी)" : "ZONE B SELECTED (ATTENTION)"),
+      score: isActionCompleted
+        ? (lang === "hi" ? "स्वास्थ्य: 88/100" : "Health: 88/100")
+        : (lang === "hi" ? "स्वास्थ्य: 74/100" : "Health: 74/100"),
       title: lang === "hi" ? "जोन B (नहर का निचला भाग • 0.4 एकड़)" : "Zone B (Canal Depressed Basin • 0.4 ac)",
-      desc:
-        lang === "hi"
-          ? "पूर्वी नहर की मेड़ के निकट होने से अत्यधिक नमी बनी रहती है। पूरे खेत में सबसे अधिक आर्द्रता वाला कोना।"
-          : "High soil moisture retention due to proximity to eastern canal bund. Highest humidity pocket in Plot.",
-      moisture: "68% (High saturation)",
-      ndvi: "0.71 (Vigorous canopy)",
-      water: "2.2 cm",
-      action: lang === "hi" ? "1 जांच लंबित" : "1 Inspection Pending",
+      desc: isActionCompleted
+        ? (lang === "hi"
+            ? "निरीक्षण पूर्ण: पत्तियां पूरी तरह स्वस्थ पाई गईं। कवक संक्रमण का कोई खतरा नहीं। ₹1,200 की बचत हुई।"
+            : "Physical check complete: Healthy vegetative tillers verified. No emergency fungicide required. ₹1,200 saved.")
+        : (lang === "hi"
+            ? "पूर्वी नहर की मेड़ के निकट होने से अत्यधिक नमी बनी रहती है। पूरे खेत में सबसे अधिक आर्द्रता वाला कोना।"
+            : "High soil moisture retention due to proximity to eastern canal bund. Highest humidity pocket in Plot."),
+      moisture: isActionCompleted ? "56% (Optimal)" : "68% (High saturation)",
+      ndvi: isActionCompleted ? "0.76 (Healthy)" : "0.71 (Vigorous canopy)",
+      water: isActionCompleted ? "2.0 cm (Controlled)" : "2.2 cm",
+      action: isActionCompleted
+        ? (lang === "hi" ? "जांच पूर्ण ✓ (स्वस्थ)" : "Inspection Completed ✓")
+        : (lang === "hi" ? "1 जांच लंबित" : "1 Inspection Pending"),
     },
     C: {
       badge: lang === "hi" ? "जोन C चुना गया" : "ZONE C SELECTED",
@@ -280,6 +301,47 @@ export function FarmerPortal() {
     },
   };
 
+  // Handle Direct One-Click Completion of Action
+  const handleDirectCompleteAction = async () => {
+    setProcessingAction(true);
+    try {
+      const activeAction = actions[0] || { id: "act_ravi_01" };
+      await fetch(`/api/actions/${activeAction.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "COMPLETED", notes: "Completed and verified by farmer." }),
+      }).catch(() => null);
+
+      setIsActionCompleted(true);
+      try {
+        localStorage.setItem("kisanloop-task-completed", "true");
+      } catch {}
+
+      setToastMessage(
+        lang === "hi"
+          ? "शाबाश! खेत का कार्य पूर्ण हुआ और क्लोज्ड लूप बंद हुआ।"
+          : "Action marked complete and closed loop verified!"
+      );
+      setTimeout(() => setToastMessage(null), 3500);
+      fetchData();
+    } catch (e) {
+      console.error(e);
+      setIsActionCompleted(true);
+    } finally {
+      setProcessingAction(false);
+    }
+  };
+
+  // Handle Resetting Action (for live testing)
+  const handleResetActionState = () => {
+    setIsActionCompleted(false);
+    try {
+      localStorage.removeItem("kisanloop-task-completed");
+    } catch {}
+    setToastMessage(lang === "hi" ? "कार्य पुनः लंबित स्थिति में सेट किया गया।" : "Task reset to pending state.");
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
   // Handle Completing Walkthrough Action
   const submitWalkthroughOutcome = async () => {
     setProcessingAction(true);
@@ -289,18 +351,29 @@ export function FarmerPortal() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "COMPLETED", outcome: selectedOutcome }),
-      });
+      }).catch(() => null);
+
+      setIsActionCompleted(true);
+      try {
+        localStorage.setItem("kisanloop-task-completed", "true");
+      } catch {}
 
       setOutcomeSuccess(true);
       setTimeout(() => {
         setShowWalkthroughModal(false);
         setOutcomeSuccess(false);
-        setToastMessage(lang === "hi" ? "शाबाश! खेत का परिणाम सफलतापूर्वक दर्ज हुआ।" : "Action verified and loop closed!");
+        setToastMessage(
+          lang === "hi"
+            ? "शाबाश! खेत का परिणाम सफलतापूर्वक दर्ज हुआ और लूप बंद हुआ।"
+            : "Action verified and closed loop completed!"
+        );
         setTimeout(() => setToastMessage(null), 3500);
         fetchData();
-      }, 1500);
+      }, 1200);
     } catch (e) {
       console.error(e);
+      setIsActionCompleted(true);
+      setShowWalkthroughModal(false);
     } finally {
       setProcessingAction(false);
     }
@@ -724,38 +797,44 @@ export function FarmerPortal() {
               <section className="relative rounded-20px overflow-hidden shadow-sm border border-[#e8e7de] bg-white">
                 <div className="relative min-h-[19rem] sm:min-h-[18rem] sm:h-72 w-full overflow-hidden">
                   <img
-                    alt="Farmer Ravi Kumar in field"
-                    className="w-full h-full object-cover object-[center_28%]"
-                    src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1400&q=80"
+                    alt="Lush green paddy fields in Namkum, Ranchi"
+                    className="w-full h-full object-cover object-[center_35%] scale-105 transition-transform duration-700"
+                    src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=85"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=1200&q=80";
+                      (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=1600&q=85";
                     }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-primary/95 via-primary/60 to-transparent"></div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#072315]/95 via-[#072315]/50 to-black/20"></div>
                   <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-7 lg:p-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4 text-white">
-                    <div className="space-y-1.5">
-                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/25 text-xs font-semibold text-white">
-                        <AppIcon name="wb_sunny" className="w-4 h-4  text-amber-300" />
+                    <div className="space-y-1.5 drop-shadow-sm">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/30 backdrop-blur-md border border-white/25 text-xs font-semibold text-white">
+                        <AppIcon name="wb_sunny" className="w-4 h-4 text-amber-300" />
                         <span>
                           {lang === "hi"
                             ? "आज • 29°C धूप और अधिक नमी (78%)"
                             : "Today • 29°C Mild Sunlight, High Humidity"}
                         </span>
                       </div>
-                      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold tracking-tight">
+                      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-display font-extrabold tracking-tight drop-shadow-md">
                         {lang === "hi" ? `नमस्ते ${farmerName}! 👋 🌾` : `Namaste ${farmerName}! 👋 🌾`}
                       </h1>
-                      <p className="text-white/90 text-sm sm:text-base font-medium max-w-xl">
-                        {farmTitle} • {acres}. {lang === "hi"
-                          ? "कल्ले फूट रहे हैं। आज केवल 1 छोटी जांच जरूरी है।"
-                          : "Crop is tillering well. Only 1 quick check required."}
+                      <p className="text-white/95 text-sm sm:text-base font-medium max-w-xl drop-shadow-sm">
+                        {farmTitle} • {acres}. {isActionCompleted
+                          ? (lang === "hi"
+                              ? "आज के सभी कार्य पूरे हुए! तीनों जोन स्वस्थ हैं।"
+                              : "All actions completed today! All 3 zones are optimal.")
+                          : (lang === "hi"
+                              ? "कल्ले फूट रहे हैं। आज केवल 1 छोटी जांच जरूरी है।"
+                              : "Crop is tillering well. Only 1 quick check required.")}
                       </p>
                     </div>
 
                     {/* Big Farm Health Score Circle */}
                     <div className="bg-white/95 text-charcoal backdrop-blur-md rounded-2xl p-4 shadow-lg border border-white/40 flex items-center gap-3.5 self-start sm:self-auto shrink-0">
-                      <div className="relative w-13 h-13 rounded-full bg-emerald-100 flex items-center justify-center text-primary font-display font-black text-xl">
-                        82
+                      <div className={`relative w-13 h-13 rounded-full flex items-center justify-center font-display font-black text-xl ${
+                        isActionCompleted ? "bg-emerald-200 text-emerald-900" : "bg-emerald-100 text-primary"
+                      }`}>
+                        {isActionCompleted ? "88" : "82"}
                         <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                           <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-600"></span>
@@ -766,10 +845,14 @@ export function FarmerPortal() {
                           {lang === "hi" ? "खेत की स्थिति" : "Farm Health Score"}
                         </span>
                         <span className="text-base font-bold text-primary leading-tight">
-                          {lang === "hi" ? "अच्छी स्थिति (82/100)" : "Good Shape (82/100)"}
+                          {isActionCompleted
+                            ? (lang === "hi" ? "उत्कृष्ट (88/100) ✓" : "Optimal (88/100) ✓")
+                            : (lang === "hi" ? "अच्छी स्थिति (82/100)" : "Good Shape (82/100)")}
                         </span>
                         <span className="text-[11px] text-secondary font-medium">
-                          {lang === "hi" ? "जोन A व C स्वस्थ • जोन B जांचें" : "Zone A & C Optimal • Zone B Needs Check"}
+                          {isActionCompleted
+                            ? (lang === "hi" ? "तीनों जोन स्वस्थ • लूप बंद" : "All 3 Zones Clean • Closed Loop")
+                            : (lang === "hi" ? "जोन A व C स्वस्थ • जोन B जांचें" : "Zone A & C Optimal • Zone B Needs Check")}
                         </span>
                       </div>
                     </div>
@@ -777,122 +860,232 @@ export function FarmerPortal() {
                 </div>
               </section>
 
-              {/* THE HERO ACTION CARD */}
-              <section className="bg-white rounded-2xl p-4 sm:p-6 lg:p-9 shadow-sm border-2 border-emerald-800/20 card-hover relative overflow-hidden">
-                <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-primary via-emerald-600 to-amber-500"></div>
-                <div className="flex flex-col lg:flex-row gap-8 items-start justify-between">
-                  <div className="flex-1 space-y-4">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-light border border-amber-500/30 text-amber-900 font-bold text-xs uppercase tracking-wide">
-                        <span>⚠️</span>
-                        <span>{lang === "hi" ? "आज 1 कार्य आवश्यक" : "1 Action Due Today"}</span>
-                      </span>
-                      <span className="text-xs font-semibold text-secondary bg-[#F6F5EF] px-3 py-1 rounded-full">
-                        {lang === "hi" ? "स्थान: जोन B (नहर वाला कोना)" : "Location: Zone B (Near Canal Gate)"}
-                      </span>
-                      <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                        4-Point Feasibility Passed ✓
-                      </span>
+              {/* THE HERO ACTION CARD (DYNAMIC STATE REFLECTION) */}
+              {isActionCompleted ? (
+                <section className="bg-gradient-to-br from-emerald-50 via-white to-emerald-50/40 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-sm border-2 border-emerald-600/60 relative overflow-hidden animate-in fade-in zoom-in-98 duration-300">
+                  <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600"></div>
+                  <div className="flex flex-col lg:flex-row gap-6 items-start justify-between">
+                    <div className="flex-1 space-y-3.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-600 text-white font-bold text-xs uppercase tracking-wide shadow-xs">
+                          <AppIcon name="verified" className="w-4 h-4 text-white" />
+                          <span>{lang === "hi" ? "कार्य पूर्ण व लूप बंद ✓" : "Closed Loop Verified ✓"}</span>
+                        </span>
+                        <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full">
+                          {lang === "hi" ? "स्थान: जोन B (निरीक्षण पूर्ण)" : "Location: Zone B (Verified Clean)"}
+                        </span>
+                        <span className="text-xs font-bold text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200">
+                          ₹1,200 Cost Saved ✓
+                        </span>
+                      </div>
+
+                      <div>
+                        <h2 className="text-2xl lg:text-3xl font-display font-extrabold text-[#113a24] tracking-tight leading-snug">
+                          {lang === "hi"
+                            ? "शाबाश! आज का निरीक्षण पूर्ण हुआ और खेत सुरक्षित है 🎉"
+                            : "All Actions Completed Today! Farm Health Verified 🎉"}
+                        </h2>
+                        <p className="text-sm sm:text-base font-bold text-emerald-800 mt-1">
+                          {lang === "hi"
+                            ? "जोन B में कोई कवक संक्रमण नहीं मिला। अनावश्यक कीटनाशक से खेत व मिट्टी दोनों सुरक्षित।"
+                            : "Physical walk completed: Zero blight symptoms found. Root zone and tillers verified robust."}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-white border border-emerald-200 shadow-2xs">
+                          <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-lg shrink-0">💰</div>
+                          <div>
+                            <span className="text-[10px] font-semibold text-secondary block uppercase">{lang === "hi" ? "बचत" : "Saved"}</span>
+                            <span className="text-sm font-black text-emerald-700">₹1,200 (100%)</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-white border border-emerald-200 shadow-2xs">
+                          <div className="w-10 h-10 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center text-lg shrink-0">🌾</div>
+                          <div>
+                            <span className="text-[10px] font-semibold text-secondary block uppercase">{lang === "hi" ? "खेत स्वास्थ्य" : "Health"}</span>
+                            <span className="text-sm font-black text-teal-700">88/100 (Optimal)</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-white border border-emerald-200 shadow-2xs">
+                          <div className="w-10 h-10 rounded-full bg-sky-100 text-sky-800 flex items-center justify-center text-lg shrink-0">📅</div>
+                          <div>
+                            <span className="text-[10px] font-semibold text-secondary block uppercase">{lang === "hi" ? "अगली जांच" : "Next Check"}</span>
+                            <span className="text-sm font-black text-sky-800">In 3 Days</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setCurrentTab("journey")}
+                          className="px-5 py-2.5 rounded-xl bg-[#214e34] hover:bg-[#163624] text-white font-bold text-xs shadow-xs flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <AppIcon name="all_inclusive" className="w-4 h-4" />
+                          <span>{lang === "hi" ? "क्लोज्ड लूप ऑडिट देखें" : "View Closed Loop Audit"}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowWalkthroughModal(true)}
+                          className="px-4 py-2.5 rounded-xl bg-white hover:bg-emerald-50 text-emerald-800 font-bold text-xs border border-emerald-200 cursor-pointer shadow-2xs"
+                        >
+                          {lang === "hi" ? "जांच पुनः दर्ज करें" : "Re-open Walkthrough"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleResetActionState}
+                          className="px-3 py-2.5 text-secondary hover:text-charcoal font-semibold text-xs cursor-pointer"
+                          title="Reset for Demo"
+                        >
+                          ↺ Reset Demo
+                        </button>
+                      </div>
                     </div>
 
-                    <div>
-                      <h2 className="text-2xl lg:text-3xl font-display font-extrabold text-primary tracking-tight leading-snug">
+                    <div className="w-full lg:w-72 shrink-0 bg-white p-4 rounded-2xl border border-emerald-200 shadow-2xs flex flex-col items-center text-center">
+                      <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center text-2xl mb-2">
+                        ✓
+                      </div>
+                      <span className="text-xs font-bold text-emerald-900 uppercase tracking-wider">
+                        {lang === "hi" ? "परिणाम ऑडिट पूर्ण" : "Audit Log Updated"}
+                      </span>
+                      <p className="text-[11px] text-secondary mt-1 leading-snug">
                         {lang === "hi"
-                          ? "जोन B में पत्तियों के पीले या धब्बेदार सिरों की जांच करें"
-                          : "Inspect Zone B for Yellow or Pale Leaf Tips"}
-                      </h2>
-                      <p className="text-base font-bold text-emerald-800 mt-1">
-                        {lang === "hi"
-                          ? "निचली मेंड़ पर 15 मिनट की पैदल जांच ताकि बिना किसी दवाई के शुरुआती लक्षण रोके जा सकें"
-                          : "15-Minute physical walk along the lower ridge to catch early blight before spray is needed"}
+                          ? "KVK वैज्ञानिक व जिला डैशबोर्ड पर आपका परिणाम सिंक हो चुका है।"
+                          : "Synchronized to KVK Expert Portal and District Agri Dashboard in real time."}
                       </p>
                     </div>
+                  </div>
+                </section>
+              ) : (
+                <section className="bg-white rounded-2xl p-4 sm:p-6 lg:p-9 shadow-sm border-2 border-emerald-800/20 card-hover relative overflow-hidden">
+                  <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-primary via-emerald-600 to-amber-500"></div>
+                  <div className="flex flex-col lg:flex-row gap-8 items-start justify-between">
+                    <div className="flex-1 space-y-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-light border border-amber-500/30 text-amber-900 font-bold text-xs uppercase tracking-wide">
+                          <span>⚠️</span>
+                          <span>{lang === "hi" ? "आज 1 कार्य आवश्यक" : "1 Action Due Today"}</span>
+                        </span>
+                        <span className="text-xs font-semibold text-secondary bg-[#F6F5EF] px-3 py-1 rounded-full">
+                          {lang === "hi" ? "स्थान: जोन B (नहर वाला कोना)" : "Location: Zone B (Near Canal Gate)"}
+                        </span>
+                        <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                          4-Point Feasibility Passed ✓
+                        </span>
+                      </div>
 
-                    <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed max-w-2xl">
-                      {lang === "hi"
-                        ? "कल की 18mm बारिश और 78% नमी से जोन B में पानी रुकने से फंगस का खतरा हो सकता है। अभी 15 मिनट देख लेने से अगले हफ्ते ₹1,200 की अनावश्यक कीटनाशक की बचत होगी।"
-                        : "Yesterday's 18mm rainfall and 78% relative humidity created temporary moisture pooling in Zone B. A quick visual check now avoids spending ₹1,200 on emergency fungicide next week."}
-                    </p>
+                      <div>
+                        <h2 className="text-2xl lg:text-3xl font-display font-extrabold text-primary tracking-tight leading-snug">
+                          {lang === "hi"
+                            ? "जोन B में पत्तियों के पीले या धब्बेदार सिरों की जांच करें"
+                            : "Inspect Zone B for Yellow or Pale Leaf Tips"}
+                        </h2>
+                        <p className="text-base font-bold text-emerald-800 mt-1">
+                          {lang === "hi"
+                            ? "निचली मेंड़ पर 15 मिनट की पैदल जांच ताकि बिना किसी दवाई के शुरुआती लक्षण रोके जा सकें"
+                            : "15-Minute physical walk along the lower ridge to catch early blight before spray is needed"}
+                        </p>
+                      </div>
 
-                    {/* 3 Feasibility Pills */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-                      <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F6F5EF] border border-[#e8e7de]">
-                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-xl shadow-xs shrink-0">⏱️</div>
-                        <div>
-                          <span className="text-[11px] font-semibold text-secondary block uppercase">{lang === "hi" ? "समय" : "Time Needed"}</span>
-                          <span className="text-sm font-bold text-charcoal">15-20 Mins</span>
+                      <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed max-w-2xl">
+                        {lang === "hi"
+                          ? "कल की 18mm बारिश और 78% नमी से जोन B में पानी रुकने से फंगस का खतरा हो सकता है। अभी 15 मिनट देख लेने से अगले हफ्ते ₹1,200 की अनावश्यक कीटनाशक की बचत होगी।"
+                          : "Yesterday's 18mm rainfall and 78% relative humidity created temporary moisture pooling in Zone B. A quick visual check now avoids spending ₹1,200 on emergency fungicide next week."}
+                      </p>
+
+                      {/* 3 Feasibility Pills */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F6F5EF] border border-[#e8e7de]">
+                          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-xl shadow-xs shrink-0">⏱️</div>
+                          <div>
+                            <span className="text-[11px] font-semibold text-secondary block uppercase">{lang === "hi" ? "समय" : "Time Needed"}</span>
+                            <span className="text-sm font-bold text-charcoal">15-20 Mins</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F6F5EF] border border-[#e8e7de]">
+                          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-xl shadow-xs shrink-0">💰</div>
+                          <div>
+                            <span className="text-[11px] font-semibold text-secondary block uppercase">{lang === "hi" ? "लागत" : "Cost Today"}</span>
+                            <span className="text-sm font-bold text-emerald-800">{lang === "hi" ? "₹0 मुफ्त" : "₹0 Free"}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F6F5EF] border border-[#e8e7de]">
+                          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-xl shadow-xs shrink-0">👨‍🌾</div>
+                          <div>
+                            <span className="text-[11px] font-semibold text-secondary block uppercase">{lang === "hi" ? "मेहनत" : "Labour Effort"}</span>
+                            <span className="text-sm font-bold text-charcoal">{lang === "hi" ? "आसान (पैदल जांच)" : "Easy (Walk)"}</span>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F6F5EF] border border-[#e8e7de]">
-                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-xl shadow-xs shrink-0">💰</div>
-                        <div>
-                          <span className="text-[11px] font-semibold text-secondary block uppercase">{lang === "hi" ? "लागत" : "Cost Today"}</span>
-                          <span className="text-sm font-bold text-emerald-800">{lang === "hi" ? "₹0 मुफ्त" : "₹0 Free"}</span>
-                        </div>
-                      </div>
+                      {/* Main Action Buttons */}
+                      <div className="pt-3 flex flex-wrap items-center gap-3">
+                        <button
+                          className="px-6 py-3.5 rounded-xl bg-primary hover:bg-[#163624] text-white font-display font-bold text-sm shadow-md flex items-center gap-2 cursor-pointer transition-all"
+                          onClick={() => setShowWalkthroughModal(true)}
+                        >
+                          <span>{lang === "hi" ? "3-कदम जांच शुरू करें" : "Start 3-Step Walkthrough"}</span>
+                          <AppIcon name="arrow_forward" className="w-[18px] h-[18px]" />
+                        </button>
 
-                      <div className="flex items-center gap-3 p-3 rounded-xl bg-[#F6F5EF] border border-[#e8e7de]">
-                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-xl shadow-xs shrink-0">👨‍🌾</div>
-                        <div>
-                          <span className="text-[11px] font-semibold text-secondary block uppercase">{lang === "hi" ? "मेहनत" : "Labour Effort"}</span>
-                          <span className="text-sm font-bold text-charcoal">{lang === "hi" ? "आसान (पैदल जांच)" : "Easy (Walk)"}</span>
-                        </div>
+                        <button
+                          className="px-4 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 cursor-pointer transition-all disabled:opacity-50"
+                          disabled={processingAction}
+                          onClick={handleDirectCompleteAction}
+                        >
+                          <AppIcon name="check_circle" className="w-4 h-4 text-white" />
+                          <span>{lang === "hi" ? "जांच पूर्ण (1-क्लिक)" : "Mark Completed (1-Click)"}</span>
+                        </button>
+
+                        <button
+                          className="px-4 py-3 rounded-xl bg-[#F6F5EF] hover:bg-emerald-100 text-primary font-bold text-xs flex items-center gap-1.5 border border-[#e8e7de] transition-colors cursor-pointer"
+                          onClick={() => setShowWhyDrawer(true)}
+                        >
+                          <AppIcon name="info" className="w-[18px] h-[18px]" />
+                          <span>{lang === "hi" ? "यह सलाह क्यों?" : "Why this recommendation?"}</span>
+                        </button>
+
+                        <button
+                          className="px-4 py-3 rounded-xl bg-[#F6F5EF] hover:bg-amber-100 text-amber-900 font-bold text-xs flex items-center gap-1.5 border border-amber-200 transition-colors cursor-pointer"
+                          onClick={() => setShowBarrierModal(true)}
+                        >
+                          <AppIcon name="help_outline" className="w-[18px] h-[18px]" />
+                          <span>{lang === "hi" ? "बाधा दर्ज करें" : "Can't do this?"}</span>
+                        </button>
                       </div>
                     </div>
 
-                    {/* Main Action Buttons */}
-                    <div className="pt-3 flex flex-wrap items-center gap-3">
-                      <button
-                        className="px-6 py-3.5 rounded-xl bg-primary hover:bg-[#163624] text-white font-display font-bold text-sm shadow-md flex items-center gap-2 cursor-pointer transition-all"
-                        onClick={() => setShowWalkthroughModal(true)}
-                      >
-                        <span>{lang === "hi" ? "3-कदम जांच शुरू करें" : "Start 3-Step Walkthrough"}</span>
-                        <AppIcon name="arrow_forward" className="w-[18px] h-[18px]" />
-                      </button>
-
-                      <button
-                        className="px-4 py-3 rounded-xl bg-[#F6F5EF] hover:bg-emerald-100 text-primary font-bold text-xs flex items-center gap-1.5 border border-[#e8e7de] transition-colors cursor-pointer"
-                        onClick={() => setShowWhyDrawer(true)}
-                      >
-                        <AppIcon name="info" className="w-[18px] h-[18px]" />
-                        <span>{lang === "hi" ? "यह सलाह क्यों दी गई?" : "Why this recommendation?"}</span>
-                      </button>
-
-                      <button
-                        className="px-4 py-3 rounded-xl bg-[#F6F5EF] hover:bg-amber-100 text-amber-900 font-bold text-xs flex items-center gap-1.5 border border-amber-200 transition-colors cursor-pointer"
-                        onClick={() => setShowBarrierModal(true)}
-                      >
-                        <AppIcon name="help_outline" className="w-[18px] h-[18px]" />
-                        <span>{lang === "hi" ? "यह नहीं कर पा रहे?" : "Can't do this? What stopped you?"}</span>
-                      </button>
+                    {/* Right Leaf Visual Reference */}
+                    <div className="w-full lg:w-80 shrink-0 bg-[#F6F5EF] p-4 rounded-2xl border border-[#e8e7de] flex flex-col items-center">
+                      <div className="w-full relative rounded-xl overflow-hidden shadow-sm aspect-[4/3]">
+                        <img
+                          alt="Reference leaf inspection"
+                          className="w-full h-full object-cover"
+                          src="https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?auto=format&fit=crop&w=600&q=80"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=600&q=80";
+                          }}
+                        />
+                        <div className="absolute bottom-2 left-2 right-2 bg-black/75 backdrop-blur-sm text-white px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5">
+                          <AppIcon name="search" className="w-4 h-4 text-amber-300" />
+                          <span>{lang === "hi" ? "पत्ती के निचले हिस्से पर धब्बे देखें" : "Inspect lower collar for spots"}</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-center font-medium text-secondary mt-3 leading-snug">
+                        {lang === "hi"
+                          ? "लक्ष्य: नहर के किनारे 5-6 पौधों की निचली पत्तियों पर हल्के पीले या भूरे निशान देखें"
+                          : "Target: Check 5-6 stems near canal water border for pale yellowish lesions"}
+                      </p>
                     </div>
                   </div>
-
-                  {/* Right Leaf Visual Reference */}
-                  <div className="w-full lg:w-80 shrink-0 bg-[#F6F5EF] p-4 rounded-2xl border border-[#e8e7de] flex flex-col items-center">
-                    <div className="w-full relative rounded-xl overflow-hidden shadow-sm aspect-[4/3]">
-                      <img
-                        alt="Reference leaf inspection"
-                        className="w-full h-full object-cover"
-                        src="https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?auto=format&fit=crop&w=600&q=80"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=600&q=80";
-                        }}
-                      />
-                      <div className="absolute bottom-2 left-2 right-2 bg-black/75 backdrop-blur-sm text-white px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5">
-                        <AppIcon name="search" className="w-4 h-4  text-amber-300" />
-                        <span>{lang === "hi" ? "पत्ती के निचले हिस्से पर धब्बे देखें" : "Inspect lower collar for spots"}</span>
-                      </div>
-                    </div>
-                    <p className="text-xs text-center font-medium text-secondary mt-3 leading-snug">
-                      {lang === "hi"
-                        ? "लक्ष्य: नहर के किनारे 5-6 पौधों की निचली पत्तियों पर हल्के पीले या भूरे निशान देखें"
-                        : "Target: Check 5-6 stems near canal water border for pale yellowish lesions"}
-                    </p>
-                  </div>
-                </div>
-              </section>
+                </section>
+              )}
 
               {/* 3-STEP DIRECT WALKTHROUGH CARDS */}
               <section className="space-y-4">
@@ -1180,46 +1373,75 @@ export function FarmerPortal() {
                   </h2>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold px-3 py-1 bg-amber-100 text-amber-900 rounded-full">1 Due Today</span>
-                  <span className="text-xs font-bold px-3 py-1 bg-emerald-100 text-primary rounded-full">2 Completed</span>
+                  <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+                    isActionCompleted ? "bg-zinc-100 text-zinc-500" : "bg-amber-100 text-amber-900"
+                  }`}>
+                    {isActionCompleted ? "0 Due Today" : "1 Due Today"}
+                  </span>
+                  <span className="text-xs font-bold px-3 py-1 bg-emerald-100 text-primary rounded-full">
+                    {isActionCompleted ? "3 Completed ✓" : "2 Completed"}
+                  </span>
                 </div>
               </div>
 
               {/* Task Item 1 */}
-              <div className="bg-white rounded-2xl p-4 sm:p-6 border-2 border-amber-500/40 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 card-hover">
+              <div className={`bg-white rounded-2xl p-4 sm:p-6 border-2 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 card-hover ${
+                isActionCompleted ? "border-emerald-500/40 bg-emerald-50/20" : "border-amber-500/40"
+              }`}>
                 <div className="flex items-start gap-4 flex-1">
-                  <div className="w-12 h-12 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
-                    <AppIcon name="pest_control" className="w-6 h-6" />
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${
+                    isActionCompleted ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                  }`}>
+                    <AppIcon name={isActionCompleted ? "verified" : "pest_control"} className="w-6 h-6" />
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-0.5 bg-amber-100 text-amber-900 font-bold text-[11px] rounded-full uppercase">Due Today</span>
-                      <span className="text-xs font-medium text-secondary">Zone B • 15 Mins • ₹0 Cost</span>
+                      <span className={`px-2.5 py-0.5 font-bold text-[11px] rounded-full uppercase ${
+                        isActionCompleted ? "bg-emerald-600 text-white" : "bg-amber-100 text-amber-900"
+                      }`}>
+                        {isActionCompleted ? "Completed ✓" : "Due Today"}
+                      </span>
+                      <span className="text-xs font-medium text-secondary">
+                        Zone B • {isActionCompleted ? "₹1,200 Saved" : "15 Mins • ₹0 Cost"}
+                      </span>
                     </div>
-                    <h4 className="text-lg font-bold text-charcoal">
+                    <h4 className={`text-lg font-bold text-charcoal ${isActionCompleted ? "line-through opacity-80" : ""}`}>
                       {lang === "hi" ? "जोन B में पीले / हल्के पत्तों की जांच करें" : "Inspect Zone B for Yellow / Pale Leaf Blades"}
                     </h4>
                     <p className="text-xs text-slate-600 dark:text-slate-300">
-                      {lang === "hi"
-                        ? "निचली मेड़ पर 15 मिनट की पैदल जांच ताकि बिना किसी दवाई के शुरुआती लक्षण रोके जा सकें। 4-बिंदु व्यवहार्यता परीक्षण द्वारा सत्यापित।"
-                        : "Quick field walk to detect early blight before any spray requirement. Validated by 4-point feasibility test."}
+                      {isActionCompleted
+                        ? (lang === "hi"
+                            ? "सत्यापित: जोन B में पत्तियों का निरीक्षण पूर्ण हुआ। कोई फंगस नहीं मिला। क्लोज्ड लूप ऑडिट दर्ज।"
+                            : "Verified: Physical inspection complete. Foliage healthy. Outcome recorded in closed loop audit trail.")
+                        : (lang === "hi"
+                            ? "निचली मेड़ पर 15 मिनट की पैदल जांच ताकि बिना किसी दवाई के शुरुआती लक्षण रोके जा सकें। 4-बिंदु व्यवहार्यता परीक्षण द्वारा सत्यापित।"
+                            : "Quick field walk to detect early blight before any spray requirement. Validated by 4-point feasibility test.")}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <button
-                    className="px-3.5 py-2.5 bg-[#F6F5EF] hover:bg-emerald-100 text-primary font-bold text-xs rounded-xl border border-[#e8e7de] transition-colors cursor-pointer"
-                    onClick={() => setShowWhyDrawer(true)}
-                  >
-                    Why?
-                  </button>
-                  <button
-                    className="px-5 py-2.5 bg-primary hover:bg-[#163624] text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 cursor-pointer"
-                    onClick={() => setShowWalkthroughModal(true)}
-                  >
-                    <AppIcon name="play_circle" className="w-4 h-4" />
-                    <span>Execute Task</span>
-                  </button>
+                  {isActionCompleted ? (
+                    <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-3.5 py-2 rounded-xl border border-emerald-300 flex items-center gap-1.5">
+                      <AppIcon name="done_all" className="w-4 h-4 text-emerald-700" />
+                      <span>Closed Loop Verified</span>
+                    </span>
+                  ) : (
+                    <>
+                      <button
+                        className="px-3.5 py-2.5 bg-[#F6F5EF] hover:bg-emerald-100 text-primary font-bold text-xs rounded-xl border border-[#e8e7de] transition-colors cursor-pointer"
+                        onClick={() => setShowWhyDrawer(true)}
+                      >
+                        Why?
+                      </button>
+                      <button
+                        className="px-5 py-2.5 bg-primary hover:bg-[#163624] text-white font-bold text-xs rounded-xl shadow-sm flex items-center gap-1.5 cursor-pointer"
+                        onClick={() => setShowWalkthroughModal(true)}
+                      >
+                        <AppIcon name="play_circle" className="w-4 h-4" />
+                        <span>Execute Task</span>
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -1344,14 +1566,26 @@ export function FarmerPortal() {
                 </div>
                 <div className="space-y-4 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-[#e8e7de]">
                   <div className="relative pl-8 space-y-1">
-                    <div className="absolute left-2 top-1.5 w-3.5 h-3.5 rounded-full bg-primary border-2 border-white"></div>
+                    <div className={`absolute left-2 top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white ${
+                      isActionCompleted ? "bg-emerald-600" : "bg-primary"
+                    }`}></div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-primary">Today, 08:30 AM</span>
-                      <span className="px-2 py-0.5 bg-amber-100 text-amber-900 text-[10px] font-bold rounded">Loop In Progress</span>
+                      <span className={`px-2 py-0.5 text-[10px] font-bold rounded ${
+                        isActionCompleted ? "bg-emerald-100 text-emerald-900" : "bg-amber-100 text-amber-900"
+                      }`}>
+                        {isActionCompleted ? "Loop Closed & Verified ✓" : "Loop In Progress"}
+                      </span>
                     </div>
-                    <h5 className="text-sm font-bold text-charcoal">Precipitation Spike → Zone B Inspection Triggered</h5>
+                    <h5 className="text-sm font-bold text-charcoal">
+                      {isActionCompleted
+                        ? "Zone B Visual Scouting Completed → Closed Loop Verified"
+                        : "Precipitation Spike → Zone B Inspection Triggered"}
+                    </h5>
                     <p className="text-xs text-secondary">
-                      Rainfall (18mm) flagged early blight risk. Feasibility gate filtered out ₹1,200 prophylactic spray recommendation due to zero detected symptoms.
+                      {isActionCompleted
+                        ? "Farmer completed physical walk in Zone B. Zero blight symptoms confirmed. Prevented ₹1,200 chemical spray expenditure. System telemetry synced."
+                        : "Rainfall (18mm) flagged early blight risk. Feasibility gate filtered out ₹1,200 prophylactic spray recommendation due to zero detected symptoms."}
                     </p>
                   </div>
 

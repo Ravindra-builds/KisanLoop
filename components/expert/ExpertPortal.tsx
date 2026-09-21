@@ -116,7 +116,7 @@ export function ExpertPortal() {
   const [cases, setCases] = useState<CaseItem[]>(INITIAL_CASES);
   const [selectedCase, setSelectedCase] = useState<CaseItem>(INITIAL_CASES[0]);
   const [activeTab, setActiveTab] = useState<"all" | "low-ai" | "pathogen" | "escalation" | "dispatched">("low-ai");
-  const [navSection, setNavSection] = useState<"queue" | "diagnostic" | "formulary" | "pathogen">("queue");
+  const [navSection, setNavSection] = useState<"queue" | "diagnostic" | "formulary" | "pathogen" | "profile">("queue");
   const [searchQuery, setSearchQuery] = useState("");
   const [imageMode, setImageMode] = useState<"rgb" | "ndvi">("rgb");
   const [selectedFormulation, setSelectedFormulation] = useState("Tricyclazole 75 WP (Beam / Baan)");
@@ -141,8 +141,19 @@ export function ExpertPortal() {
   // Profile & Role State
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [expertName, setExpertName] = useState("Dr. K. Patel");
-  const [expertDesignation, setExpertDesignation] = useState("KVK Pathologist");
-  const [expertDepartment, setExpertDepartment] = useState("KVK Ranchi Pathology");
+  const [expertDesignation, setExpertDesignation] = useState("Senior Plant Pathologist & KVK Specialist");
+  const [expertDepartment, setExpertDepartment] = useState("Krishi Vigyan Kendra (KVK Ranchi)");
+  const [expertEmail, setExpertEmail] = useState("dr.patel@kvk-ranchi.org");
+  const [expertPhone, setExpertPhone] = useState("+91 94311 02948");
+  const [expertSpecialization, setExpertSpecialization] = useState("Plant Pathology & Integrated Pest Management (IPM)");
+  const [expertExperience, setExpertExperience] = useState("14 Years");
+  const [expertRegistration, setExpertRegistration] = useState("ICAR-SMS-JH-4402");
+  const [expertDistrict, setExpertDistrict] = useState("Ranchi");
+  const [expertState, setExpertState] = useState("Jharkhand");
+  const [expertBio, setExpertBio] = useState(
+    "Senior Plant Pathologist at Krishi Vigyan Kendra (BAU Ranchi). Leading disease diagnostic surveillance and ICAR Package of Practices verification across Eastern Plateau."
+  );
+  const [savingProfile, setSavingProfile] = useState(false);
   const [userRole, setUserRole] = useState<"FARMER" | "EXPERT" | "GOVT" | "ADMIN">("EXPERT");
 
   useEffect(() => {
@@ -152,6 +163,7 @@ export function ExpertPortal() {
         if (res.success && res.data?.user) {
           const u = res.data.user;
           if (u.name && u.name !== "Farmer") setExpertName(u.name);
+          if (u.email) setExpertEmail(u.email);
           if (u.role) setUserRole(u.role);
           if (res.data.isProfileComplete === false) {
             setShowProfileModal(true);
@@ -164,6 +176,37 @@ export function ExpertPortal() {
   const triggerToast = (title: string, message: string, icon = "check_circle") => {
     setToast({ title, message, icon });
     setTimeout(() => setToast(null), 3800);
+  };
+
+  const handleSaveExpertProfile = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setSavingProfile(true);
+    try {
+      const res = await fetch("/api/auth/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role: "EXPERT",
+          name: expertName,
+          phone: expertPhone,
+          designation: expertDesignation,
+          department: expertDepartment,
+          district: expertDistrict,
+          state: expertState,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        triggerToast("Profile Updated", "Expert profile and credentials saved successfully.", "verified");
+      } else {
+        triggerToast("Save Error", data.error || "Failed to save profile.", "error");
+      }
+    } catch (err: any) {
+      console.error(err);
+      triggerToast("Error", "Network error saving profile.", "error");
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   const { logout: handleLogout } = useAppLogout();
@@ -312,6 +355,17 @@ export function ExpertPortal() {
               </button>
               <button
                 type="button"
+                onClick={() => setNavSection("profile")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                  navSection === "profile"
+                    ? "bg-white dark:bg-zinc-900 text-[#214e34] dark:text-white shadow-xs"
+                    : "text-[#608570] hover:text-[#111814] dark:hover:text-white"
+                }`}
+              >
+                Expert Profile
+              </button>
+              <button
+                type="button"
                 onClick={() => setShowPathogenMapModal(true)}
                 className="px-3 py-1.5 rounded-lg text-xs font-bold text-[#608570] hover:text-[#111814] dark:hover:text-white transition cursor-pointer"
               >
@@ -342,7 +396,11 @@ export function ExpertPortal() {
             </button>
 
             {/* ICAR Authenticated Doctor Info */}
-            <div className="flex items-center gap-2.5 pl-3 border-l border-[#eaf0ed] dark:border-white/10">
+            <div
+              onClick={() => setNavSection("profile")}
+              className="flex items-center gap-2.5 pl-3 border-l border-[#eaf0ed] dark:border-white/10 cursor-pointer hover:opacity-85 transition"
+              title="View & Edit Expert Profile"
+            >
               <div className="hidden sm:flex flex-col text-right">
                 <span className="text-xs font-bold text-[#111814] dark:text-white">{expertName}</span>
                 <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold flex items-center justify-end gap-0.5">
@@ -407,6 +465,17 @@ export function ExpertPortal() {
           </button>
           <button
             type="button"
+            onClick={() => setNavSection("profile")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              navSection === "profile"
+                ? "bg-[#214e34] text-white shadow-xs"
+                : "bg-white dark:bg-zinc-800 text-[#608570] dark:text-zinc-300 border border-[#dce6dc] dark:border-white/10"
+            }`}
+          >
+            Expert Profile
+          </button>
+          <button
+            type="button"
             onClick={() => setShowPathogenMapModal(true)}
             className="px-3 py-1.5 rounded-lg text-xs font-bold bg-white dark:bg-zinc-800 text-[#608570] dark:text-zinc-300 border border-[#dce6dc] dark:border-white/10 whitespace-nowrap transition cursor-pointer"
           >
@@ -415,10 +484,425 @@ export function ExpertPortal() {
         </div>
 
         {/* ==================================================================== */}
-        {/* KPI METRIC CARDS                                                     */}
+        {/* CONDITIONAL MAIN CONTENT BASED ON NAV SECTION                        */}
         {/* ==================================================================== */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-6">
-          <div className="p-4 rounded-2xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs">
+        {navSection === "profile" ? (
+          /* ==================================================================== */
+          /* EXPERT PROFILE VIEW                                                  */
+          /* ==================================================================== */
+          <div className="space-y-6">
+            {/* Top Doctor Profile Card */}
+            <div className="p-6 rounded-3xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <img
+                    src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&w=240&q=80"
+                    alt={expertName}
+                    className="w-20 h-20 rounded-2xl object-cover border-2 border-[#214e34] shadow-md"
+                  />
+                  <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs shadow-xs" title="Verified ICAR Specialist">
+                    <AppIcon name="verified" className="w-3.5 h-3.5" />
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="text-xl font-black text-[#111814] dark:text-white">{expertName}</h2>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider">
+                      Active ICAR Triage Lead
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#608570] dark:text-zinc-300 font-medium">{expertDesignation}</p>
+                  <div className="flex items-center gap-3 text-xs text-[#608570] dark:text-zinc-400">
+                    <span className="flex items-center gap-1">
+                      <AppIcon name="domain" className="w-3.5 h-3.5 text-[#214e34] dark:text-emerald-400" />
+                      {expertDepartment}
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1">
+                      <AppIcon name="badge" className="w-3.5 h-3.5 text-[#214e34] dark:text-emerald-400" />
+                      Reg: {expertRegistration}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5 self-stretch md:self-auto justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowProfileModal(true)}
+                  className="px-3.5 py-2 rounded-xl bg-[#eaf0ed] dark:bg-zinc-800 hover:bg-[#dce6dc] text-[#214e34] dark:text-zinc-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                >
+                  <AppIcon name="switch_account" className="w-4 h-4" />
+                  <span>Switch Role</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveExpertProfile}
+                  disabled={savingProfile}
+                  className="px-5 py-2 rounded-xl bg-[#214e34] hover:bg-[#143722] text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <AppIcon name="save" className={`w-4 h-4 ${savingProfile ? "animate-spin" : ""}`} />
+                  <span>{savingProfile ? "Saving Profile..." : "Save Profile"}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Impact Metric Cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+              <div className="p-4 rounded-2xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#608570] dark:text-zinc-400">Cases Reviewed</span>
+                  <AppIcon name="assignment_turned_in" className="w-4 h-4 text-[#214e34] dark:text-emerald-400" />
+                </div>
+                <p className="text-2xl font-black text-[#111814] dark:text-white tracking-tight mt-1">420 Cases</p>
+                <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">100% SLA compliance</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#608570] dark:text-zinc-400">Triage Accuracy</span>
+                  <AppIcon name="verified" className="w-4 h-4 text-emerald-600" />
+                </div>
+                <p className="text-2xl font-black text-[#111814] dark:text-white tracking-tight mt-1">98.6%</p>
+                <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">ICAR peer validated</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#608570] dark:text-zinc-400">Bio-Savings Validated</span>
+                  <AppIcon name="savings" className="w-4 h-4 text-amber-600" />
+                </div>
+                <p className="text-2xl font-black text-[#111814] dark:text-white tracking-tight mt-1">₹14.8 Lakhs</p>
+                <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">340 farmers protected</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#608570] dark:text-zinc-400">Supervised Blocks</span>
+                  <AppIcon name="location_city" className="w-4 h-4 text-blue-600" />
+                </div>
+                <p className="text-2xl font-black text-[#111814] dark:text-white tracking-tight mt-1">18 Blocks</p>
+                <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">Ranchi &amp; Ramgarh</span>
+              </div>
+            </div>
+
+            {/* 2-Column Editable Profile Form */}
+            <form onSubmit={handleSaveExpertProfile} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left Column: Personal & Contact Details */}
+              <div className="p-6 rounded-3xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs space-y-4">
+                <div className="flex items-center gap-2 border-b border-[#eaf0ed] dark:border-white/10 pb-3">
+                  <AppIcon name="person" className="w-5 h-5 text-[#214e34] dark:text-emerald-400" />
+                  <h3 className="font-bold text-sm text-[#111814] dark:text-white">Personal &amp; Contact Details</h3>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-bold text-[#111814] dark:text-zinc-200 mb-1">Doctor / Specialist Full Name</label>
+                    <input
+                      type="text"
+                      value={expertName}
+                      onChange={(e) => setExpertName(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#214e34] outline-none"
+                      placeholder="e.g. Dr. K. Patel"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-[#111814] dark:text-zinc-200 mb-1">Official Email Address</label>
+                      <input
+                        type="email"
+                        value={expertEmail}
+                        onChange={(e) => setExpertEmail(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#214e34] outline-none"
+                        placeholder="doctor@kvk-icar.org"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-[#111814] dark:text-zinc-200 mb-1">Mobile / WhatsApp Hotline</label>
+                      <input
+                        type="tel"
+                        value={expertPhone}
+                        onChange={(e) => setExpertPhone(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#214e34] outline-none"
+                        placeholder="+91 94311 02948"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-[#111814] dark:text-zinc-200 mb-1">Assigned District</label>
+                      <input
+                        type="text"
+                        value={expertDistrict}
+                        onChange={(e) => setExpertDistrict(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#214e34] outline-none"
+                        placeholder="e.g. Ranchi"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-[#111814] dark:text-zinc-200 mb-1">State Jurisdiction</label>
+                      <input
+                        type="text"
+                        value={expertState}
+                        onChange={(e) => setExpertState(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#214e34] outline-none"
+                        placeholder="e.g. Jharkhand"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#111814] dark:text-zinc-200 mb-1">Professional Advisory Statement / Bio</label>
+                    <textarea
+                      rows={3}
+                      value={expertBio}
+                      onChange={(e) => setExpertBio(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#214e34] outline-none resize-none"
+                      placeholder="Specialization summary and ICAR advisory scope..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: ICAR Credentials & Specialization */}
+              <div className="p-6 rounded-3xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs space-y-4">
+                <div className="flex items-center gap-2 border-b border-[#eaf0ed] dark:border-white/10 pb-3">
+                  <AppIcon name="verified" className="w-5 h-5 text-emerald-600" />
+                  <h3 className="font-bold text-sm text-[#111814] dark:text-white">ICAR &amp; KVK Accreditation</h3>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-bold text-[#111814] dark:text-zinc-200 mb-1">Official Designation &amp; Title</label>
+                    <input
+                      type="text"
+                      value={expertDesignation}
+                      onChange={(e) => setExpertDesignation(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#214e34] outline-none"
+                      placeholder="e.g. Senior Plant Pathologist & KVK Specialist"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#111814] dark:text-zinc-200 mb-1">KVK Centre / Affiliated University</label>
+                    <input
+                      type="text"
+                      value={expertDepartment}
+                      onChange={(e) => setExpertDepartment(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#214e34] outline-none"
+                      placeholder="e.g. Krishi Vigyan Kendra (KVK Ranchi) / BAU"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-[#111814] dark:text-zinc-200 mb-1">ICAR Registration ID</label>
+                      <input
+                        type="text"
+                        value={expertRegistration}
+                        onChange={(e) => setExpertRegistration(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#214e34] outline-none font-mono"
+                        placeholder="ICAR-SMS-JH-4402"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-[#111814] dark:text-zinc-200 mb-1">Field Experience</label>
+                      <input
+                        type="text"
+                        value={expertExperience}
+                        onChange={(e) => setExpertExperience(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#214e34] outline-none"
+                        placeholder="14 Years"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#111814] dark:text-zinc-200 mb-1">Primary Specialization</label>
+                    <input
+                      type="text"
+                      value={expertSpecialization}
+                      onChange={(e) => setExpertSpecialization(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#214e34] outline-none"
+                      placeholder="Plant Pathology & IPM"
+                    />
+                  </div>
+
+                  <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/80 dark:border-emerald-800/40 text-[11px] text-[#214e34] dark:text-emerald-300 space-y-1">
+                    <div className="font-bold flex items-center gap-1.5">
+                      <AppIcon name="lock" className="w-3.5 h-3.5" />
+                      Digital Signature &amp; Advisory Authority
+                    </div>
+                    <p className="text-[10px] text-[#608570] dark:text-zinc-400">
+                      Authorizations made by this account carry verified cryptographic hash tokens appended to all dispatched farmer prescriptions under ICAR Rule 2024.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Submit Actions */}
+              <div className="lg:col-span-2 flex items-center justify-between pt-2">
+                <button
+                  type="button"
+                  onClick={() => setNavSection("queue")}
+                  className="px-4 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 text-xs font-bold text-[#608570] dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition cursor-pointer"
+                >
+                  ← Back to Triage Queue
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingProfile}
+                  className="px-6 py-2.5 rounded-xl bg-[#214e34] hover:bg-[#143722] text-white text-xs font-bold transition shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <AppIcon name="check" className={`w-4 h-4 ${savingProfile ? "animate-spin" : ""}`} />
+                  <span>{savingProfile ? "Saving Profile..." : "Save Expert Profile Changes"}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : navSection === "formulary" ? (
+          /* ==================================================================== */
+          /* ICAR FORMULARY EXPLORER VIEW                                         */
+          /* ==================================================================== */
+          <div className="space-y-6">
+            <div className="p-6 rounded-3xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black text-[#111814] dark:text-white flex items-center gap-2">
+                  <AppIcon name="menu_book" className="w-6 h-6 text-[#214e34] dark:text-emerald-400" />
+                  ICAR Certified Package of Practices (POP) &amp; Bio-Formulary
+                </h2>
+                <p className="text-xs text-[#608570] dark:text-zinc-300 mt-1">
+                  Standardized ICAR dosages, bio-agent formulations, and chemical pesticide restriction registry for Ranchi Agro-climatic Zone.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNavSection("queue")}
+                className="px-4 py-2 rounded-xl bg-[#214e34] text-white text-xs font-bold self-start md:self-auto cursor-pointer"
+              >
+                ← Back to Triage Queue
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-5 rounded-3xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs space-y-3">
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 text-[10px] font-bold uppercase">
+                  Bio-Fungicide Protocol
+                </span>
+                <h3 className="font-bold text-sm text-[#111814] dark:text-white">Trichoderma viride 1.5% WP</h3>
+                <p className="text-xs text-[#608570] dark:text-zinc-300">
+                  Dosage: <strong>2.5 kg / hectare</strong> mixed in 500L water with 50kg farmyard manure (FYM). Effective for Seedling Blight &amp; Root Rot prevention.
+                </p>
+                <div className="pt-2 border-t border-[#eaf0ed] dark:border-white/10 flex justify-between text-[11px] text-emerald-700 dark:text-emerald-400 font-bold">
+                  <span>Pre-Harvest Interval: 0 Days</span>
+                  <span>Safety: Class IV Non-toxic</span>
+                </div>
+              </div>
+
+              <div className="p-5 rounded-3xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs space-y-3">
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 text-[10px] font-bold uppercase">
+                  Botanical Repellent
+                </span>
+                <h3 className="font-bold text-sm text-[#111814] dark:text-white">Azadirachtin (Neem Oil 1500 PPM)</h3>
+                <p className="text-xs text-[#608570] dark:text-zinc-300">
+                  Dosage: <strong>5.0 mL / Litre water</strong> + 1mL soap emulsifier. Foliar spray for Sucking Pests, Leaf Folders, and Early-stage Stem Borer oviposition deterrent.
+                </p>
+                <div className="pt-2 border-t border-[#eaf0ed] dark:border-white/10 flex justify-between text-[11px] text-amber-700 dark:text-amber-400 font-bold">
+                  <span>Pre-Harvest Interval: 1 Day</span>
+                  <span>Pollinator Safe: Yes</span>
+                </div>
+              </div>
+
+              <div className="p-5 rounded-3xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs space-y-3">
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 text-[10px] font-bold uppercase">
+                  Bacterial Antagonist
+                </span>
+                <h3 className="font-bold text-sm text-[#111814] dark:text-white">Pseudomonas fluorescens 1% WP</h3>
+                <p className="text-xs text-[#608570] dark:text-zinc-300">
+                  Dosage: <strong>10 gm / kg seed</strong> or <strong>2.5 kg / hectare</strong> soil application. Induces Systemic Acquired Resistance (SAR) against Bacterial Leaf Blight.
+                </p>
+                <div className="pt-2 border-t border-[#eaf0ed] dark:border-white/10 flex justify-between text-[11px] text-blue-700 dark:text-blue-400 font-bold">
+                  <span>Pre-Harvest Interval: 0 Days</span>
+                  <span>Bio-Compatibility: High</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : navSection === "diagnostic" ? (
+          /* ==================================================================== */
+          /* DIFFERENTIAL DIAGNOSTIC WORKBENCH VIEW                               */
+          /* ==================================================================== */
+          <div className="space-y-6">
+            <div className="p-6 rounded-3xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black text-[#111814] dark:text-white flex items-center gap-2">
+                  <AppIcon name="psychology" className="w-6 h-6 text-[#214e34] dark:text-emerald-400" />
+                  ICAR Differential Diagnostic Workbench
+                </h2>
+                <p className="text-xs text-[#608570] dark:text-zinc-300 mt-1">
+                  Automated spectral lesion analysis, weather-disease correlation, and cross-pathogen symptom distinction matrix.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNavSection("queue")}
+                className="px-4 py-2 rounded-xl bg-[#214e34] text-white text-xs font-bold self-start md:self-auto cursor-pointer"
+              >
+                ← Back to Triage Queue
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="p-5 rounded-3xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs space-y-4">
+                <h3 className="font-bold text-sm text-[#111814] dark:text-white flex items-center gap-2">
+                  <AppIcon name="compare_arrows" className="w-4 h-4 text-[#214e34] dark:text-emerald-400" />
+                  Leaf Blast vs Brown Spot Symptom Matrix
+                </h3>
+                <div className="space-y-2.5 text-xs">
+                  <div className="p-3 bg-red-50/50 dark:bg-red-950/20 rounded-xl border border-red-200">
+                    <span className="font-bold text-red-800 dark:text-red-300 block mb-1">Magnaporthe oryzae (Leaf Blast)</span>
+                    <p className="text-[#608570] dark:text-zinc-300 text-[11px]">
+                      Spindle-shaped elliptical lesions with pointed ends, greyish-white centre, and dark reddish-brown margins. Relative humidity &gt;88% trigger.
+                    </p>
+                  </div>
+                  <div className="p-3 bg-amber-50/50 dark:bg-amber-950/20 rounded-xl border border-amber-200">
+                    <span className="font-bold text-amber-800 dark:text-amber-300 block mb-1">Bipolaris oryzae (Brown Spot)</span>
+                    <p className="text-[#608570] dark:text-zinc-300 text-[11px]">
+                      Circular to oval spots resembling sesame seeds, uniformly brown with yellowish halo. Correlates with potassium / silicon nutrient deficiencies.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-5 rounded-3xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs space-y-4">
+                <h3 className="font-bold text-sm text-[#111814] dark:text-white flex items-center gap-2">
+                  <AppIcon name="thunderstorm" className="w-4 h-4 text-blue-600" />
+                  Environmental Pathogen Incubation Predictor
+                </h3>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-zinc-900 rounded-xl">
+                    <span className="font-medium">Dew Period Duration</span>
+                    <strong className="text-emerald-600">&gt; 9.5 Hours (High Spore Germination)</strong>
+                  </div>
+                  <div className="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-zinc-900 rounded-xl">
+                    <span className="font-medium">Canopy Micro-climate Temp</span>
+                    <strong className="text-emerald-600">22°C - 27°C (Optimal Blast Range)</strong>
+                  </div>
+                  <div className="flex justify-between items-center p-2.5 bg-slate-50 dark:bg-zinc-900 rounded-xl">
+                    <span className="font-medium">Soil Nitrogen Load</span>
+                    <strong className="text-amber-600">High (&gt;120 kg N/ha promotes succulent tissue)</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div>
+            {/* KPI METRIC CARDS */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 mb-6">
+              <div className="p-4 rounded-2xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#608570] dark:text-zinc-400">
                 Escalated Queue
@@ -903,11 +1387,13 @@ export function ExpertPortal() {
                     </>
                   )}
                 </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+)}
+</div>
 
       {/* ==================================================================== */}
       {/* MODAL 1: EMERGENCY ALERT BROADCAST                                   */}

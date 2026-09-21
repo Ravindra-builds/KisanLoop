@@ -34,18 +34,27 @@ const BLOCKS_DATA: BlockData[] = [
 ];
 
 export function GovernmentDashboard() {
-  const [activeModule, setActiveModule] = useState<"overview" | "funnel" | "barriers" | "gis-map" | "outcomes">("overview");
+  const [activeModule, setActiveModule] = useState<"overview" | "funnel" | "barriers" | "gis-map" | "outcomes" | "profile">("overview");
   const [selectedDistrict, setSelectedDistrict] = useState("Ranchi District (18 Blocks)");
   const [selectedSeason, setSelectedSeason] = useState("Kharif Season 2024");
   const [selectedBlock, setSelectedBlock] = useState<BlockData>(BLOCKS_DATA[0]);
   const [mandateTarget, setMandateTarget] = useState(70);
   const [currentAAR, setCurrentAAR] = useState(64.2);
 
-  // Profile & Role Switcher
+  // Profile & Role Switcher State
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [officialName, setOfficialName] = useState("Dr. S. K. Tirkey");
   const [officialDesignation, setOfficialDesignation] = useState("Joint Director Agriculture");
   const [officialDepartment, setOfficialDepartment] = useState("Ranchi District Agriculture Office");
+  const [officialEmail, setOfficialEmail] = useState("jtdir.agri.ranchi@jharkhand.gov.in");
+  const [officialPhone, setOfficialPhone] = useState("+91 94311 88201");
+  const [officialEmployeeId, setOfficialEmployeeId] = useState("JH-AGRI-DIR-1082");
+  const [officialDistrict, setOfficialDistrict] = useState("Ranchi");
+  const [officialState, setOfficialState] = useState("Jharkhand");
+  const [officialOfficeAddress, setOfficialOfficeAddress] = useState("District Agriculture Office, Krishi Bhawan, Kanke Road, Ranchi - 834008");
+  const [officialJurisdiction, setOfficialJurisdiction] = useState("18 Blocks • South Chota Nagpur Division");
+  const [officialSchemes, setOfficialSchemes] = useState("PM-KISAN, NFSM, Soil Health Card, RKVY");
+  const [savingProfile, setSavingProfile] = useState(false);
   const [userRole, setUserRole] = useState<"FARMER" | "EXPERT" | "GOVT" | "ADMIN">("GOVT");
 
   useEffect(() => {
@@ -55,6 +64,7 @@ export function GovernmentDashboard() {
         if (res.success && res.data?.user) {
           const u = res.data.user;
           if (u.name && u.name !== "Farmer") setOfficialName(u.name);
+          if (u.email) setOfficialEmail(u.email);
           if (u.role) setUserRole(u.role);
           if (res.data.isProfileComplete === false) {
             setShowProfileModal(true);
@@ -63,6 +73,37 @@ export function GovernmentDashboard() {
       })
       .catch(() => {});
   }, []);
+
+  const handleSaveGovtProfile = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setSavingProfile(true);
+    try {
+      const res = await fetch("/api/auth/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role: "GOVT",
+          name: officialName,
+          phone: officialPhone,
+          designation: officialDesignation,
+          department: officialDepartment,
+          district: officialDistrict,
+          state: officialState,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        triggerToast("Official Profile Saved", "Directorate profile and credentials updated successfully.", "verified");
+      } else {
+        triggerToast("Save Error", data.error || "Failed to update profile.", "error");
+      }
+    } catch (err: any) {
+      console.error(err);
+      triggerToast("Error", "Network error saving profile.", "error");
+    } finally {
+      setSavingProfile(false);
+    }
+  };
 
   // Modals & Popups
   const [showExportModal, setShowExportModal] = useState(false);
@@ -191,6 +232,19 @@ export function GovernmentDashboard() {
               <span>Verified Outcomes</span>
             </button>
 
+            <button
+              type="button"
+              onClick={() => setActiveModule("profile")}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition text-left cursor-pointer ${
+                activeModule === "profile"
+                  ? "bg-[#214e34] text-white shadow-xs"
+                  : "text-[#4f6351] dark:text-zinc-300 hover:bg-[#eaf0ed] dark:hover:bg-zinc-800"
+              }`}
+            >
+              <AppIcon name="person" className="w-6 h-6" />
+              <span>Official Profile</span>
+            </button>
+
             {/* Mandate Target Card */}
             <div className="pt-4 mt-4 border-t border-[#e2ebe4] dark:border-white/10">
               <div className="p-3 bg-[#ebf7eb] dark:bg-[#151e18] rounded-xl border border-[#d2ded5] dark:border-white/10 space-y-2">
@@ -241,7 +295,11 @@ export function GovernmentDashboard() {
             </button>
           </div>
 
-          <div className="flex items-center gap-2.5 px-2 py-1">
+          <div
+            onClick={() => setActiveModule("profile")}
+            className="flex items-center gap-2.5 px-2 py-1.5 rounded-xl hover:bg-[#ebf7eb] dark:hover:bg-zinc-800 cursor-pointer transition"
+            title="View & Edit Official Profile"
+          >
             <div className="w-8 h-8 rounded-lg bg-[#05371f] text-white flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
               {officialName
                 .split(" ")
@@ -383,6 +441,17 @@ export function GovernmentDashboard() {
             }`}
           >
             Field Outcomes
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveModule("profile")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+              activeModule === "profile"
+                ? "bg-[#214e34] text-white shadow-xs"
+                : "bg-[#f1fcf1] dark:bg-zinc-800 text-[#4f6351] dark:text-zinc-300 border border-[#dce6dc] dark:border-white/10"
+            }`}
+          >
+            Official Profile
           </button>
         </div>
 
@@ -739,6 +808,288 @@ export function GovernmentDashboard() {
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* ================================================================= */}
+          {/* MODULE 5: OFFICIAL PROFILE & GOVERNANCE DESK                      */}
+          {/* ================================================================= */}
+          {activeModule === "profile" && (
+            <div className="space-y-6">
+              {/* Top Official Banner Card */}
+              <div className="p-6 rounded-3xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="w-20 h-20 rounded-2xl bg-[#05371f] text-white flex items-center justify-center font-black text-2xl shadow-md border-2 border-emerald-500/40">
+                      {officialName
+                        .split(" ")
+                        .filter(Boolean)
+                        .map((n) => n[0])
+                        .slice(0, 2)
+                        .join("")
+                        .toUpperCase() || "GO"}
+                    </div>
+                    <span className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center text-xs shadow-xs" title="Verified Gazetted Officer">
+                      <AppIcon name="verified" className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-xl font-black text-[#141e17] dark:text-white">{officialName}</h2>
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 text-[10px] font-bold uppercase tracking-wider">
+                        Authorized Gazetted Officer (Class-I)
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#4f6351] dark:text-zinc-300 font-semibold">{officialDesignation}</p>
+                    <div className="flex items-center gap-3 text-xs text-[#4f6351] dark:text-zinc-400">
+                      <span className="flex items-center gap-1">
+                        <AppIcon name="domain" className="w-3.5 h-3.5 text-[#05371f] dark:text-emerald-400" />
+                        {officialDepartment}
+                      </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <AppIcon name="badge" className="w-3.5 h-3.5 text-[#05371f] dark:text-emerald-400" />
+                        Emp ID: {officialEmployeeId}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2.5 self-stretch md:self-auto justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowProfileModal(true)}
+                    className="px-3.5 py-2 rounded-xl bg-[#ebf7eb] dark:bg-zinc-800 hover:bg-[#dce6dc] text-[#05371f] dark:text-zinc-200 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <AppIcon name="switch_account" className="w-4 h-4" />
+                    <span>Switch Role</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveGovtProfile}
+                    disabled={savingProfile}
+                    className="px-5 py-2 rounded-xl bg-[#05371f] hover:bg-[#163624] text-white text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <AppIcon name="save" className={`w-4 h-4 ${savingProfile ? "animate-spin" : ""}`} />
+                    <span>{savingProfile ? "Saving Profile..." : "Save Profile"}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Administrative Impact Metrics */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#4f6351] dark:text-zinc-400">Jurisdiction</span>
+                    <AppIcon name="map" className="w-4 h-4 text-[#05371f] dark:text-emerald-400" />
+                  </div>
+                  <p className="text-2xl font-black text-[#141e17] dark:text-white tracking-tight mt-1">18 Blocks</p>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">Ranchi District</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#4f6351] dark:text-zinc-400">Registered Farmers</span>
+                    <AppIcon name="groups" className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <p className="text-2xl font-black text-[#141e17] dark:text-white tracking-tight mt-1">18,420+</p>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">AgriStack e-KYC linked</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#4f6351] dark:text-zinc-400">Active DBT Schemes</span>
+                    <AppIcon name="payments" className="w-4 h-4 text-amber-600" />
+                  </div>
+                  <p className="text-2xl font-black text-[#141e17] dark:text-white tracking-tight mt-1">4 Schemes</p>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">PM-KISAN &amp; NFSM</span>
+                </div>
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#4f6351] dark:text-zinc-400">Advisory AAR</span>
+                    <AppIcon name="speed" className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <p className="text-2xl font-black text-[#141e17] dark:text-white tracking-tight mt-1">{currentAAR}%</p>
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">+52.2% vs baseline</span>
+                </div>
+              </div>
+
+              {/* 2-Column Editable Official Profile Form */}
+              <form onSubmit={handleSaveGovtProfile} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Column: Official Administrative Details */}
+                <div className="p-6 rounded-3xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs space-y-4">
+                  <div className="flex items-center gap-2 border-b border-[#eaf0ed] dark:border-white/10 pb-3">
+                    <AppIcon name="account_balance" className="w-5 h-5 text-[#05371f] dark:text-emerald-400" />
+                    <h3 className="font-bold text-sm text-[#141e17] dark:text-white">Official Administrative Profile</h3>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">Official Officer Full Name</label>
+                      <input
+                        type="text"
+                        value={officialName}
+                        onChange={(e) => setOfficialName(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none"
+                        placeholder="e.g. Dr. S. K. Tirkey"
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">Official Designation / Rank</label>
+                        <input
+                          type="text"
+                          value={officialDesignation}
+                          onChange={(e) => setOfficialDesignation(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none"
+                          placeholder="Joint Director Agriculture"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">Employee ID / Service Code</label>
+                        <input
+                          type="text"
+                          value={officialEmployeeId}
+                          onChange={(e) => setOfficialEmployeeId(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none font-mono"
+                          placeholder="JH-AGRI-DIR-1082"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">Department / Directorate</label>
+                      <input
+                        type="text"
+                        value={officialDepartment}
+                        onChange={(e) => setOfficialDepartment(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none"
+                        placeholder="Ranchi District Agriculture Office, Dept of Agri"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">Jurisdictional Division &amp; Scope</label>
+                      <input
+                        type="text"
+                        value={officialJurisdiction}
+                        onChange={(e) => setOfficialJurisdiction(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none"
+                        placeholder="18 Blocks • South Chota Nagpur Division"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Contact & Office Location */}
+                <div className="p-6 rounded-3xl bg-white dark:bg-[#18221B] border border-[#e2ebe4] dark:border-white/10 shadow-xs space-y-4">
+                  <div className="flex items-center gap-2 border-b border-[#eaf0ed] dark:border-white/10 pb-3">
+                    <AppIcon name="location_city" className="w-5 h-5 text-emerald-600" />
+                    <h3 className="font-bold text-sm text-[#141e17] dark:text-white">Headquarters &amp; Contact Information</h3>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">Official Gov Email</label>
+                        <input
+                          type="email"
+                          value={officialEmail}
+                          onChange={(e) => setOfficialEmail(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none"
+                          placeholder="officer@jharkhand.gov.in"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">Official Desk Hotline</label>
+                        <input
+                          type="tel"
+                          value={officialPhone}
+                          onChange={(e) => setOfficialPhone(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none"
+                          placeholder="+91 94311 88201"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">District Headquarters</label>
+                        <input
+                          type="text"
+                          value={officialDistrict}
+                          onChange={(e) => setOfficialDistrict(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none"
+                          placeholder="Ranchi"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">State</label>
+                        <input
+                          type="text"
+                          value={officialState}
+                          onChange={(e) => setOfficialState(e.target.value)}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none"
+                          placeholder="Jharkhand"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">Office Physical Address</label>
+                      <input
+                        type="text"
+                        value={officialOfficeAddress}
+                        onChange={(e) => setOfficialOfficeAddress(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none"
+                        placeholder="District Agriculture Office, Krishi Bhawan, Kanke Road..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#141e17] dark:text-zinc-200 mb-1">Assigned DBT Subsidy &amp; Extension Mandates</label>
+                      <input
+                        type="text"
+                        value={officialSchemes}
+                        onChange={(e) => setOfficialSchemes(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 bg-slate-50/50 dark:bg-zinc-900 text-xs font-medium focus:ring-2 focus:ring-[#05371f] outline-none"
+                        placeholder="PM-KISAN, NFSM, Soil Health Card, RKVY"
+                      />
+                    </div>
+
+                    <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/80 dark:border-emerald-800/40 text-[11px] text-[#05371f] dark:text-emerald-300 space-y-1">
+                      <div className="font-bold flex items-center gap-1.5">
+                        <AppIcon name="security" className="w-3.5 h-3.5" />
+                        AgriStack e-KYC &amp; Direct Benefit Transfer Authentication
+                      </div>
+                      <p className="text-[10px] text-[#4f6351] dark:text-zinc-400">
+                        This administrative account is linked to the Jharkhand e-Samarth portal and authorized to validate input barrier allocations and DBT subsidy disbursements.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Submit Actions */}
+                <div className="lg:col-span-2 flex items-center justify-between pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveModule("overview")}
+                    className="px-4 py-2.5 rounded-xl border border-[#dce6dc] dark:border-white/10 text-xs font-bold text-[#4f6351] dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800 transition cursor-pointer"
+                  >
+                    ← Back to Overview
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingProfile}
+                    className="px-6 py-2.5 rounded-xl bg-[#05371f] hover:bg-[#163624] text-white text-xs font-bold transition shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    <AppIcon name="check" className={`w-4 h-4 ${savingProfile ? "animate-spin" : ""}`} />
+                    <span>{savingProfile ? "Saving Profile..." : "Save Official Profile Changes"}</span>
+                  </button>
+                </div>
+              </form>
             </div>
           )}
         </main>
