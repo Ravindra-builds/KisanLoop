@@ -290,16 +290,15 @@ export function AdminPortal() {
               </div>
             </div>
 
-            {/* Role Switcher Badge */}
+            {/* Profile Setup / View Button */}
             <button
               type="button"
               onClick={() => setShowProfileModal(true)}
               className="flex items-center gap-1.5 px-3 py-2 bg-[#eaf0ed] dark:bg-zinc-800 hover:bg-[#dce6dc] text-[#214e34] dark:text-emerald-300 rounded-xl border border-[#dce6dc] dark:border-white/10 text-xs font-bold shadow-xs transition cursor-pointer"
-              title="Change Role / Setup Profile"
+              title="Profile Settings"
             >
-              <AppIcon name="manage_accounts" className="w-4 h-4" />
-              <span>Role: {userRole}</span>
-              <span className="text-[10px] underline font-normal">(Switch)</span>
+              <AppIcon name="account_circle" className="w-4 h-4" />
+              <span className="hidden sm:inline">Profile</span>
             </button>
 
             {/* Dedicated Universal Logout Button */}

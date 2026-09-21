@@ -357,27 +357,15 @@ export function ExpertPortal() {
               />
             </div>
 
-            {/* Role Switcher Badge */}
-            <button
-              type="button"
-              onClick={() => setShowProfileModal(true)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-[#eaf0ed] dark:bg-zinc-800 hover:bg-[#dce6dc] text-[#214e34] dark:text-emerald-300 rounded-xl border border-[#dce6dc] dark:border-white/10 text-xs font-bold shadow-xs transition cursor-pointer"
-              title="Change Role / Setup Profile"
-            >
-              <AppIcon name="manage_accounts" className="w-4 h-4" />
-              <span>Role: {userRole}</span>
-              <span className="text-[10px] underline font-normal">(Switch)</span>
-            </button>
-
             {/* Dedicated Logout Button */}
             <button
               type="button"
               onClick={handleLogout}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white dark:bg-zinc-800 hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl border border-[#dce6dc] dark:border-white/10 hover:border-red-200 text-xs font-bold shadow-xs transition cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl border border-red-200 text-xs font-bold shadow-xs transition-all cursor-pointer hover:shadow-sm"
               title="Log out of Expert Portal"
             >
-              <AppIcon name="logout" className="w-4 h-4" />
-              <span className="hidden sm:inline">Logout</span>
+              <AppIcon name="logout" className="w-4 h-4 text-red-600" />
+              <span>Logout</span>
             </button>
           </div>
         </header>

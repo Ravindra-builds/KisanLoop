@@ -700,26 +700,15 @@ export function FarmerPortal() {
             <div className="hidden md:flex px-3 py-1 bg-white border border-[#ebeae2] rounded-full text-xs font-semibold text-charcoal shadow-xs">
               🌾 <span>{lang === "hi" ? "धान (IR-64) • कल्ले फूटने की अवस्था" : "Rice (धान) • Day 38 (Tillering)"}</span>
             </div>
-            {/* Role Switcher Badge / Button */}
-            <button
-              type="button"
-              onClick={() => setShowProfileSetupModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#ebf7eb] dark:bg-emerald-950/40 hover:bg-[#d8edd8] text-[#1b4332] dark:text-emerald-400 rounded-full border border-[#d2ded5] dark:border-emerald-800 text-xs font-bold shadow-xs transition-all cursor-pointer"
-              title="Change Role / Setup Profile"
-            >
-              <AppIcon name="manage_accounts" className="w-4 h-4" />
-              <span>Role: {userRole}</span>
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-300 underline font-normal">(Switch)</span>
-            </button>
             {/* Quick Header Logout Button */}
             <button
               type="button"
               onClick={handleLogout}
-              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-white hover:bg-red-50 text-red-600 rounded-full border border-[#ebeae2] hover:border-red-200 text-xs font-bold shadow-xs transition-all cursor-pointer"
-              title="Log Out"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-full border border-red-200 text-xs font-bold shadow-xs transition-all cursor-pointer hover:shadow-sm"
+              title="Log Out / बाहर निकलें"
             >
-              <AppIcon name="logout" className="w-4 h-4" />
-              <span className="hidden sm:inline">{lang === "hi" ? "लॉगआउट" : "Log Out"}</span>
+              <AppIcon name="logout" className="w-4 h-4 text-red-600" />
+              <span>{lang === "hi" ? "लॉगआउट" : "Log Out"}</span>
             </button>
           </div>
         </header>

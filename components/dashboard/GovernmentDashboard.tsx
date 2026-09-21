@@ -261,19 +261,6 @@ export function GovernmentDashboard() {
             </div>
           </div>
 
-          {/* Switch Role / Edit Profile Button */}
-          <button
-            type="button"
-            onClick={() => setShowProfileModal(true)}
-            className="w-full flex items-center justify-between px-3 py-2 bg-[#ebf7eb] dark:bg-emerald-950/40 hover:bg-[#d8edd8] text-[#05371f] dark:text-emerald-300 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-[#d2ded5] dark:border-emerald-800"
-          >
-            <span className="flex items-center gap-1.5">
-              <AppIcon name="manage_accounts" className="w-4 h-4" />
-              <span>Role: {userRole}</span>
-            </span>
-            <span className="text-[10px] underline font-normal">Switch</span>
-          </button>
-
           {/* Sidebar Universal Logout Button */}
           <button
             type="button"
@@ -327,27 +314,15 @@ export function GovernmentDashboard() {
               <span className="sm:hidden">Brief</span>
             </button>
 
-            {/* Role Switcher Badge */}
-            <button
-              type="button"
-              onClick={() => setShowProfileModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 sm:py-2 bg-[#ebf7eb] dark:bg-emerald-950/40 hover:bg-[#d8edd8] text-[#05371f] dark:text-emerald-300 rounded-xl border border-[#d2ded5] dark:border-emerald-800 text-xs font-bold shadow-xs transition cursor-pointer"
-              title="Change Role / Setup Profile"
-            >
-              <AppIcon name="manage_accounts" className="w-4 h-4" />
-              <span>Role: {userRole}</span>
-              <span className="text-[10px] underline font-normal">(Switch)</span>
-            </button>
-
             {/* Quick Header Logout Button */}
             <button
               type="button"
               onClick={handleLogout}
-              className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-white dark:bg-zinc-800 hover:bg-red-50 text-red-600 rounded-xl border border-[#dce6dc] dark:border-white/10 hover:border-red-200 text-xs font-bold shadow-xs transition cursor-pointer"
-              title="Logout"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-xl border border-red-200 text-xs font-bold shadow-xs transition-all cursor-pointer hover:shadow-sm"
+              title="Logout from Government Desk"
             >
-              <AppIcon name="logout" className="w-4 h-4" />
-              <span className="hidden md:inline">Logout</span>
+              <AppIcon name="logout" className="w-4 h-4 text-red-600" />
+              <span>Logout</span>
             </button>
           </div>
         </header>
